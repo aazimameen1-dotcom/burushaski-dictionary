@@ -39,7 +39,7 @@
         .ur-text {
             font-family: 'Noto Nastaliq Urdu', serif;
             direction: rtl;
-            line-height: 2.0;
+            line-height: 2.2; /* Increased line height for larger font */
         }
 
         .ipa {
@@ -79,6 +79,31 @@
             background-color: #e5e7eb;
         }
 
+        /* Toast Notification */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 16px;
+            position: fixed;
+            z-index: 100;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
+
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -93,25 +118,57 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #909aa5; 
         }
+
+        /* Dialect Selector */
+        .dialect-select {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.5rem 2rem 0.5rem 1rem;
+            border-radius: 0.375rem;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .dialect-select:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.5);
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .dialect-select option {
+            background-color: var(--oxford-blue);
+            color: white;
+        }
     </style>
 </head>
-<body class="flex flex-col min-h-screen">
+<body class="flex flex-col min-h-screen text-base md:text-lg">
 
     <!-- Oxford-style Header -->
     <header class="bg-[#002147] text-white">
-        <div class="container mx-auto px-4 lg:px-8 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <div class="w-10 h-10 bg-white text-[#002147] rounded-sm flex items-center justify-center font-serif font-bold text-xl shadow-sm">
+        <div class="container mx-auto px-4 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <div class="w-10 h-10 bg-white text-[#002147] rounded-sm flex items-center justify-center font-serif font-bold text-xl shadow-sm shrink-0">
                     BD
                 </div>
                 <div>
                     <h1 class="text-xl md:text-2xl font-serif font-bold tracking-tight">Burushaski Dictionary</h1>
-                    <p class="text-[10px] uppercase tracking-widest text-blue-200">Srinagar Dialect</p>
+                    <p class="text-[10px] uppercase tracking-widest text-blue-200" id="dialect-subtitle">Srinagar Dialect</p>
                 </div>
             </div>
-            <div class="flex items-center gap-3">
-                <button onclick="toggleSourceModal()" class="text-sm font-medium hover:text-blue-200 transition-colors flex items-center gap-2">
-                    <i class="fas fa-info-circle"></i> <span class="hidden md:inline">About / Sources</span>
+            
+            <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                <select id="dialectSelect" class="dialect-select" onchange="switchDialect(this.value)">
+                    <option value="srinagar" selected>Srinagar Dialect</option>
+                    <option value="gilgit">Gilgit-Baltistan</option>
+                </select>
+
+                <button onclick="toggleSourceModal()" class="text-sm font-medium hover:text-blue-200 transition-colors flex items-center gap-2 shrink-0">
+                    <i class="fas fa-info-circle"></i> <span class="hidden lg:inline">About</span>
                 </button>
             </div>
         </div>
@@ -122,20 +179,20 @@
         <div class="container mx-auto px-4 lg:px-8">
             <div class="relative max-w-4xl mx-auto">
                 <input type="text" id="searchInput" placeholder="Search dictionary..." 
-                    class="w-full pl-5 pr-14 py-4 rounded-md shadow-lg text-lg text-gray-800 placeholder-gray-400 outline-none focus:ring-4 focus:ring-blue-400/30 transition-all font-serif">
+                    class="w-full pl-5 pr-14 py-4 rounded-md shadow-lg text-xl text-gray-800 placeholder-gray-400 outline-none focus:ring-4 focus:ring-blue-400/30 transition-all font-serif">
                 <button class="absolute right-2 top-2 bottom-2 bg-[#002147] hover:bg-blue-900 text-white px-6 rounded transition-colors">
                     <i class="fas fa-search"></i>
                 </button>
             </div>
             
             <!-- Horizontal Filters -->
-            <div class="flex flex-wrap justify-center gap-2 mt-4 text-sm max-w-4xl mx-auto" id="filter-container">
-                <button onclick="setFilter('all')" class="filter-chip active bg-blue-800/50 text-white px-3 py-1 rounded-full" id="btn-all">All</button>
-                <button onclick="setFilter('noun')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-3 py-1 rounded-full" id="btn-noun">Nouns</button>
-                <button onclick="setFilter('verb')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-3 py-1 rounded-full" id="btn-verb">Verbs</button>
-                <button onclick="setFilter('adjective')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-3 py-1 rounded-full" id="btn-adjective">Adjectives</button>
-                <button onclick="setFilter('pronoun')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-3 py-1 rounded-full" id="btn-pronoun">Pronouns</button>
-                <button onclick="setFilter('phrase')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-3 py-1 rounded-full" id="btn-phrase">Phrases</button>
+            <div class="flex flex-wrap justify-center gap-2 mt-4 text-base max-w-4xl mx-auto" id="filter-container">
+                <button onclick="setFilter('all')" class="filter-chip active bg-blue-800/50 text-white px-4 py-1.5 rounded-full" id="btn-all">All</button>
+                <button onclick="setFilter('noun')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-4 py-1.5 rounded-full" id="btn-noun">Nouns</button>
+                <button onclick="setFilter('verb')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-4 py-1.5 rounded-full" id="btn-verb">Verbs</button>
+                <button onclick="setFilter('adjective')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-4 py-1.5 rounded-full" id="btn-adjective">Adjectives</button>
+                <button onclick="setFilter('pronoun')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-4 py-1.5 rounded-full" id="btn-pronoun">Pronouns</button>
+                <button onclick="setFilter('phrase')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-4 py-1.5 rounded-full" id="btn-phrase">Phrases</button>
             </div>
         </div>
     </div>
@@ -147,8 +204,8 @@
             <!-- Left Column: Dictionary Entries -->
             <div class="flex-grow lg:w-2/3">
                 <div class="flex justify-between items-end border-b border-gray-200 pb-2 mb-4">
-                    <h2 class="text-xl font-serif font-bold text-[#002147]">Definitions</h2>
-                    <span class="text-sm text-gray-500"><span id="showing-count">0</span> entries found</span>
+                    <h2 class="text-2xl font-serif font-bold text-[#002147]">Definitions</h2>
+                    <span class="text-base text-gray-500"><span id="showing-count">0</span> entries found</span>
                 </div>
 
                 <div id="dictionary-list" class="flex flex-col">
@@ -156,23 +213,26 @@
                 </div>
 
                 <div id="no-results" class="hidden py-12 text-center">
-                    <p class="text-gray-400 text-lg serif-font italic">No exact matches found for your search.</p>
+                    <p class="text-gray-400 text-xl serif-font italic">No exact matches found for your search in this dialect.</p>
                 </div>
             </div>
 
             <!-- Right Column: Info / Context (Desktop) -->
             <aside class="hidden lg:block w-80 shrink-0">
                 <div class="bg-[#f2f7fb] border border-blue-100 p-6 rounded-md shadow-sm sticky top-40">
-                    <h3 class="font-serif font-bold text-[#002147] mb-3 text-lg">Word of the Day</h3>
-                    <div class="mb-4">
-                        <span class="block font-serif text-2xl text-[#003366] font-bold">shughulo</span>
-                        <span class="text-sm text-gray-500 italic">noun</span>
-                        <p class="mt-2 text-gray-700">Conversation; friendly talk.</p>
+                    <h3 class="font-serif font-bold text-[#002147] mb-3 text-xl">Word of the Day</h3>
+                    <div id="word-of-day-content">
+                        <!-- Dynamic Content -->
+                        <div class="mb-4">
+                            <span class="block font-serif text-3xl text-[#003366] font-bold">shughulo</span>
+                            <span class="text-base text-gray-500 italic">noun</span>
+                            <p class="mt-2 text-lg text-gray-700">Conversation; friendly talk.</p>
+                        </div>
                     </div>
                     <hr class="border-blue-200 my-4">
-                    <div class="text-sm text-gray-600">
+                    <div class="text-base text-gray-600">
                         <p class="mb-2 font-bold text-[#002147]">Dialect Note</p>
-                        <p>This dictionary focuses on the Srinagar variant, which often exhibits vowel centralization (e.g., /a/ → /ʌ/) compared to Hunza forms.</p>
+                        <p id="dialect-note">This dictionary focuses on the Srinagar variant, which often exhibits vowel centralization (e.g., /a/ → /ʌ/) compared to Hunza forms.</p>
                     </div>
                 </div>
             </aside>
@@ -182,8 +242,8 @@
     <!-- Footer -->
     <footer class="bg-gray-100 border-t border-gray-200 mt-auto py-8">
         <div class="container mx-auto px-4 text-center">
-            <p class="text-sm text-gray-500 font-serif">Burushaski-Kashmiri Dictionary Project &copy; 2024</p>
-            <p class="text-xs text-gray-400 mt-1">Based on research by Dr. Sadaf Munshi and community contributors.</p>
+            <p class="text-base text-gray-500 font-serif">Burushaski-Kashmiri Dictionary Project &copy; 2024</p>
+            <p class="text-sm text-gray-400 mt-1">Incorporating research by Dr. Sadaf Munshi, Allamah Nasiruddin Nasir Hunzai, and community contributors.</p>
         </div>
     </footer>
 
@@ -194,21 +254,25 @@
                 <h3 class="font-serif font-bold text-lg">Source Acknowledgements</h3>
                 <button onclick="toggleSourceModal()" class="hover:text-gray-300"><i class="fas fa-times"></i></button>
             </div>
-            <div class="p-6 overflow-y-auto font-serif text-sm leading-relaxed text-gray-700">
-                <p class="mb-4">
-                    <strong>Scope:</strong> Exclusive to the Srinagar (Hari Parbat) diaspora dialect.
-                </p>
-                <ul class="list-disc pl-5 space-y-2 mb-6">
-                    <li>
-                        <strong>Mr. Raja Zeeshan:</strong> Primary informant (lexical validation & history).
-                    </li>
-                    <li>
-                        <strong>Mr. Raja Yawar:</strong> Sociolinguistic context & usage.
-                    </li>
-                    <li>
-                        <strong>Dr. Sadaf Munshi (UNT):</strong> Academic framework & documentation.
-                    </li>
-                </ul>
+            <div class="p-6 overflow-y-auto font-serif text-base leading-relaxed text-gray-700">
+                <div id="source-srinagar" class="source-content">
+                    <p class="mb-4 font-bold text-[#002147] border-b pb-2">Srinagar Dialect (Hari Parbat)</p>
+                    <ul class="list-disc pl-5 space-y-2 mb-6">
+                        <li><strong>Primary Informants:</strong> Mr. Raja Zeeshan, Mr. Raja Yawar.</li>
+                        <li><strong>Academic Framework:</strong> Dr. Sadaf Munshi (UNT).</li>
+                    </ul>
+                </div>
+                
+                <div id="source-gilgit" class="source-content mt-4">
+                    <p class="mb-4 font-bold text-[#002147] border-b pb-2">Gilgit-Baltistan Dialect (Hunza/Nagar)</p>
+                    <ul class="list-disc pl-5 space-y-2 mb-6">
+                        <li><strong>Dictionary Source:</strong> <em>Burushaski-Urdu Lughat</em> (Vols 1, 2, 3) & <em>Buruśo-Birkiş</em>.</li>
+                        <li><strong>Author:</strong> Allamah Nasiruddin Nasir Hunzai (Sitara-e-Imtiaz).</li>
+                        <li><strong>Institution:</strong> Burushaski Research Academy & University of Karachi.</li>
+                        <li><strong>Analysis:</strong> Lexicographic and Morphosemantic Analysis of the Hunza-Nagar Dialect.</li>
+                    </ul>
+                </div>
+
                 <div class="bg-gray-50 p-4 border border-gray-200 rounded">
                     <strong class="block text-[#002147] mb-2">Resources</strong>
                     <a href="https://drive.google.com/drive/folders/1FcROb0AtlbcZHVF5OB75fVRei1HHC_eD" target="_blank" class="text-blue-600 hover:underline block mb-1">
@@ -225,90 +289,195 @@
         </div>
     </div>
 
+    <!-- Toast Notification Element -->
+    <div id="toast">Citation copied to clipboard</div>
+
     <!-- JavaScript Data and Logic -->
     <script>
-        const dictionaryData = [
-            { id: 1, burushaski: "a", bur_perso: "آ", bur_ipa: "/a/", bur_std: "a-", kashmiri: "مےٚ", kash_ipa: "/me/", english: "My / Mine", pos: "pronoun (prefix)", example: "A-baba Hari Parbat-ulo hurusho bo.", example_en: "My father lives in Hari Parbat." },
-            { id: 2, burushaski: "ba", bur_perso: "با", bur_ipa: "/bɑ/", bur_std: "ba", kashmiri: "چھُس", kash_ipa: "/t͡ʃʰus/", english: "I am (masculine)", pos: "verb (auxiliary)", example: "Je Srinagar-ulo ba.", example_en: "I am in Srinagar." },
-            { id: 3, burushaski: "bo", bur_perso: "بو", bur_ipa: "/bo/", bur_std: "bo", kashmiri: "چھَس", kash_ipa: "/t͡ʃʰas/", english: "I am (feminine)", pos: "verb (auxiliary)", example: "Je doktorya bo.", example_en: "I am a doctor (female)." },
-            { id: 4, burushaski: "chap", bur_perso: "چھاپ", bur_ipa: "/t͡ʃʌp/", bur_std: "chap", kashmiri: "ماز", kash_ipa: "/maːz/", english: "Meat", pos: "noun", example: "Ine chap shibei.", example_en: "He is eating meat." },
-            { id: 5, burushaski: "chil", bur_perso: "چھِل", bur_ipa: "/t͡ʃil/", bur_std: "chil", kashmiri: "پٲنۍ", kash_ipa: "/pəːɲ/", english: "Water", pos: "noun", example: "Chil mi.", example_en: "Drink water." },
-            { id: 6, burushaski: "dasin", bur_perso: "دَسین", bur_ipa: "/dʌsin/", bur_std: "dasin", kashmiri: "کوٗر", kash_ipa: "/kuːr/", english: "Girl / Unmarried woman", pos: "noun", example: "Dasin gane gatung gitsam.", example_en: "I bought clothes for the girl." },
-            { id: 7, burushaski: "hir", bur_perso: "ہِر", bur_ipa: "/hir/", bur_std: "hir", kashmiri: "مَرد", kash_ipa: "/mard/", english: "Man", pos: "noun", example: "Hir bazaare guccham.", example_en: "The man went to the market." },
-            { id: 8, burushaski: "gus", bur_perso: "گُس", bur_ipa: "/gus/", bur_std: "gus", kashmiri: "زَنان", kash_ipa: "/zanaːn/", english: "Woman", pos: "noun", example: "Guse haralt eitsubo.", example_en: "The woman sees the rain." },
-            { id: 9, burushaski: "je", bur_perso: "جے", bur_ipa: "/d͡ʒe/", bur_std: "je", kashmiri: "بٔ", kash_ipa: "/bɨ/", english: "I", pos: "pronoun", example: "Je Burusho ba.", example_en: "I am a Burusho." },
-            { id: 10, burushaski: "un", bur_perso: "اُن", bur_ipa: "/un/", bur_std: "un", kashmiri: "ژٕ", kash_ipa: "/t͡sɨ/", english: "You (singular)", pos: "pronoun", example: "Un ka be?", example_en: "Who are you?" },
-            { id: 11, burushaski: "mi", bur_perso: "می", bur_ipa: "/mi/", bur_std: "mi", kashmiri: "أسۍ", kash_ipa: "/əsʲ/", english: "We", pos: "pronoun", example: "Mi kashmiri maan ba.", example_en: "We are Kashmiri people." },
-            { id: 12, burushaski: "ma", bur_perso: "ما", bur_ipa: "/ma/", bur_std: "ma", kashmiri: "تُہۍ", kash_ipa: "/tuhʲ/", english: "You (plural)", pos: "pronoun", example: "Ma amin baa?", example_en: "Who are you (all)?" },
-            { id: 13, burushaski: "khu", bur_perso: "کھو", bur_ipa: "/kʰu/", bur_std: "khu", kashmiri: "یِم", kash_ipa: "/jim/", english: "These (proximal)", pos: "pronoun", example: "Khu gucchar chaman.", example_en: "These people are walking." },
-            { id: 14, burushaski: "ine", bur_perso: "اِنے", bur_ipa: "/ine/", bur_std: "ine", kashmiri: "سُہ / سۄ", kash_ipa: "/su (m) / sɔ (f)/", english: "He / She (distal)", pos: "pronoun", example: "Ine kitab poraibai.", example_en: "He is reading a book." },
-            { id: 15, burushaski: "sen", bur_perso: "سین", bur_ipa: "/sen/", bur_std: "sen-", kashmiri: "وَنُن", kash_ipa: "/wanun/", english: "To say / tell", pos: "verb", example: "Mo sen!", example_en: "Don't say it!" },
-            { id: 16, burushaski: "shapik", bur_perso: "شپِک", bur_ipa: "/ʃʌpik/", bur_std: "shapik", kashmiri: "ژوoٹ", kash_ipa: "/t͡soːt/", english: "Bread / Food", pos: "noun", example: "Shapik shi.", example_en: "Eat the bread." },
-            { id: 17, burushaski: "gupas", bur_perso: "گُپَس", bur_ipa: "/gupʌs/", bur_std: "gupas", kashmiri: "پَمبٕ", kash_ipa: "/pambɨ/", english: "Cotton", pos: "noun", example: "Gupas safed bila.", example_en: "The cotton is white." },
-            { id: 18, burushaski: "hiles", bur_perso: "ہِلیس", bur_ipa: "/hiles/", bur_std: "hiles", kashmiri: "نێچُہ", kash_ipa: "/net͡ʃuh/", english: "Boy", pos: "noun", example: "Hiles skul-ulo nibai.", example_en: "The boy is going to school." },
-            { id: 19, burushaski: "mama", bur_perso: "ماما", bur_ipa: "/mʌmʌ/", bur_std: "mama", kashmiri: "موج", kash_ipa: "/moːd͡ʒ/", english: "Mother", pos: "noun", example: "A-mama shiri bo.", example_en: "My mother is good/kind." },
-            { id: 20, burushaski: "baba", bur_perso: "بابا", bur_ipa: "/bʌbʌ/", bur_std: "baba", kashmiri: "مول", kash_ipa: "/moːl/", english: "Father", pos: "noun", example: "A-baba kami euci.", example_en: "My father does work." },
-            { id: 21, burushaski: "altan", bur_perso: "اَلتَن", bur_ipa: "/ʌltʌn/", bur_std: "altan", kashmiri: "زٕ", kash_ipa: "/zɨ/", english: "Two", pos: "numeral", example: "Altan hiri du.", example_en: "There are two men." },
-            { id: 22, burushaski: "han", bur_perso: "ہَن", bur_ipa: "/hʌn/", bur_std: "han", kashmiri: "اَکھ", kash_ipa: "/akʰ/", english: "One", pos: "numeral", example: "Han tsen.", example_en: "One bird." },
-            { id: 23, burushaski: "guro", bur_perso: "گُرو", bur_ipa: "/guro/", bur_std: "guro", kashmiri: "گَرٕم", kash_ipa: "/garɨm/", english: "Hot", pos: "adjective", example: "Chil guro bila.", example_en: "The water is hot." },
-            { id: 24, burushaski: "yurq", bur_perso: "یُرق", bur_ipa: "/jurq/", bur_std: "yurq", kashmiri: "یَکھ", kash_ipa: "/jakʰ/", english: "Cold", pos: "adjective", example: "Yurq neibila.", example_en: "It is not cold." },
-            { id: 25, burushaski: "bal", bur_perso: "بَل", bur_ipa: "/bʌl/", bur_std: "bal", kashmiri: "دیوار", kash_ipa: "/diːwaːr/", english: "Wall", pos: "noun", example: "Bal-ulo.", example_en: "On the wall." },
-            { id: 26, burushaski: "tom", bur_perso: "ٹوم", bur_ipa: "/tom/", bur_std: "tom", kashmiri: "کُل", kash_ipa: "/kul/", english: "Tree", pos: "noun", example: "Tom eikhan.", example_en: "The tree is tall." },
-            { id: 27, burushaski: "phu", bur_perso: "پھو", bur_ipa: "/pʰu/", bur_std: "phu", kashmiri: "نار", kash_ipa: "/naːr/", english: "Fire", pos: "noun", example: "Phu phetu.", example_en: "Light the fire." },
-            { id: 28, burushaski: "safed", bur_perso: "سفید", bur_ipa: "/sʌfed/", bur_std: "safed", kashmiri: "سَفیٖد", kash_ipa: "/safed/", english: "White", pos: "adjective", example: "Gatung safed bila.", example_en: "The clothes are white. (Note: Kashmiri loan commonly used)" },
-            { id: 29, burushaski: "shuq", bur_perso: "شُق", bur_ipa: "/ʃuq/", bur_std: "shuq", kashmiri: "وُزُل", kash_ipa: "/wuzul/", english: "Red", pos: "adjective", example: "Shuq phu.", example_en: "Red fire." },
-            { id: 30, burushaski: "shon", bur_perso: "شون", bur_ipa: "/ʃon/", bur_std: "shon", kashmiri: "اَنہٕ گوٹ", kash_ipa: "/anɨ goːt/", english: "Blind", pos: "adjective", example: "Ine hir shon bam.", example_en: "That man was blind." },
-            { id: 31, burushaski: "e", bur_perso: "اے", bur_ipa: "/e/", bur_std: "e", kashmiri: "آ", kash_ipa: "/aː/", english: "Yes / Q-Marker", pos: "particle", example: "Un guca bai e?", example_en: "Are you walking?" },
-            { id: 32, burushaski: "be", bur_perso: "بے", bur_ipa: "/be/", bur_std: "be", kashmiri: "نہ", kash_ipa: "/na/", english: "No", pos: "particle", example: "Be, je ni neyba.", example_en: "No, I am not going." },
-            { id: 33, burushaski: "ni", bur_perso: "نی", bur_ipa: "/ni/", bur_std: "ni-", kashmiri: "گَژھُن", kash_ipa: "/gat͡sʰun/", english: "To go", pos: "verb", example: "Je bazaarer nibaa.", example_en: "I am going to the market." },
-            { id: 34, burushaski: "ju", bur_perso: "جو", bur_ipa: "/d͡ʒu/", bur_std: "ju-", kashmiri: "یُن", kash_ipa: "/jun/", english: "To come", pos: "verb", example: "Khole ju!", example_en: "Come here!" },
-            { id: 35, burushaski: "hurus", bur_perso: "ہُرس", bur_ipa: "/hurus/", bur_std: "hurus-", kashmiri: "بِہُن", kash_ipa: "/bihun/", english: "To sit / dwell", pos: "verb", example: "Kursi-ulo hurus.", example_en: "Sit on the chair." },
-            { id: 36, burushaski: "shi", bur_perso: "شی", bur_ipa: "/ʃi/", bur_std: "shi-", kashmiri: "کھیوٚن", kash_ipa: "/kʰjon/", english: "To eat", pos: "verb", example: "Bate shi.", example_en: "Eat the rice." },
-            { id: 37, burushaski: "bate", bur_perso: "بتے", bur_ipa: "/bʌte/", bur_std: "bate", kashmiri: "بَتہٕ", kash_ipa: "/batɨ/", english: "Cooked Rice", pos: "noun", example: "Bate shirin bila.", example_en: "The rice is tasty." },
-            { id: 38, burushaski: "min", bur_perso: "مِن", bur_ipa: "/min/", bur_std: "min-", kashmiri: "چوٚن", kash_ipa: "/t͡ʃon/", english: "To drink", pos: "verb", example: "Chil mina.", example_en: "Drink water." },
-            { id: 39, burushaski: "waal", bur_perso: "وال", bur_ipa: "/waːl/", bur_std: "waal-", kashmiri: "وُٹھُن", kash_ipa: "/wutʰun/", english: "To fly", pos: "verb", example: "Tsen waalibi.", example_en: "The bird flies." },
-            { id: 40, burushaski: "haralt", bur_perso: "ہَرلت", bur_ipa: "/hʌrʌlt/", bur_std: "haralt", kashmiri: "روٗد", kash_ipa: "/ruːd/", english: "Rain", pos: "noun", example: "Haralt shuqulo.", example_en: "Rain is falling." },
-            { id: 41, burushaski: "huru", bur_perso: "ہُرو", bur_ipa: "/huru/", bur_std: "huru", kashmiri: "مَرد", kash_ipa: "/mard/", english: "Men (Plural)", pos: "noun", example: "Huru jam maan.", example_en: "The men gathered." },
-            { id: 42, burushaski: "gushingants", bur_perso: "گُشنگَنٹس", bur_ipa: "/guʃingʌnt͡s/", bur_std: "gushingants", kashmiri: "زَنانہٕ", kash_ipa: "/zanaːnɨ/", english: "Women (Plural)", pos: "noun", example: "Gushingants giratas.", example_en: "The women are dancing." },
-            { id: 43, burushaski: "chaman", bur_perso: "چمَن", bur_ipa: "/t͡ʃʌmʌn/", bur_std: "chaman", kashmiri: "پَکان", kash_ipa: "/pakaːn/", english: "Walking", pos: "verb (participle)", example: "Ine chaman bai.", example_en: "He is walking." },
-            { id: 44, burushaski: "khan", bur_perso: "کھَن", bur_ipa: "/kʰʌn/", bur_std: "khan", kashmiri: "قَلعہٕ", kash_ipa: "/qala/", english: "Fort", pos: "noun", example: "Hari Parbat khan.", example_en: "The Hari Parbat fort." },
-            { id: 45, burushaski: "shughulo", bur_perso: "شُغُلو", bur_ipa: "/ʃuɣulo/", bur_std: "shughulo", kashmiri: "کَٹھ", kash_ipa: "/katʰ/", english: "Talk / Conversation", pos: "noun", example: "Mi shughulo etchan.", example_en: "We are talking." },
-            { id: 46, burushaski: "eskul", bur_perso: "اسکول", bur_ipa: "/eskul/", bur_std: "eskul", kashmiri: "سکوٗل", kash_ipa: "/skuːl/", english: "School", pos: "noun", example: "Eskul dur bila.", example_en: "The school is far. (Loanword established in dialect)" },
-            { id: 47, burushaski: "ha", bur_perso: "ہا", bur_ipa: "/hʌ/", bur_std: "ha", kashmiri: "گَرٕ", kash_ipa: "/garɨ/", english: "House", pos: "noun", example: "A-ha Hari Parbat-ulo bila.", example_en: "My house is in Hari Parbat." },
-            { id: 48, burushaski: "yater", bur_perso: "یَتِر", bur_ipa: "/jʌter/", bur_std: "yater", kashmiri: "مَشہٕ ہِنٛد", kash_ipa: "/maʃɨhind/", english: "Up / Above", pos: "adverb", example: "Yater ni.", example_en: "Go up." },
-            { id: 49, burushaski: "mar", bur_perso: "مَر", bur_ipa: "/mʌr/", bur_std: "mar", kashmiri: "گِیو", kash_ipa: "/gʲaw/", english: "Butter / Ghee", pos: "noun", example: "Mar shi.", example_en: "Eat butter." },
-            { id: 50, burushaski: "phat", bur_perso: "پھَٹ", bur_ipa: "/pʰʌt/", bur_std: "phat", kashmiri: "تراوُن", kash_ipa: "/traːwun/", english: "Leave / Abandon (verb root)", pos: "verb", example: "Phat eti.", example_en: "Leave it." },
-            { id: 51, burushaski: "be hal be", bur_perso: "بے حال بے", bur_ipa: "/be hɑl be/", bur_std: "be hal be", kashmiri: "کیا حال چھُ", kash_ipa: "/kja haːl t͡ʃʰu/", english: "How are you?", pos: "phrase", example: "Le braya, be hal be?", example_en: "O brother, how are you?" },
-            { id: 52, burushaski: "aw", bur_perso: "آؤ", bur_ipa: "/au/", bur_std: "au", kashmiri: "مول", kash_ipa: "/moːl/", english: "Father", pos: "noun", example: "A-aw juwai.", example_en: "My father is coming." },
-            { id: 53, burushaski: "atro", bur_perso: "اَترو", bur_ipa: "/atro/", bur_std: "a-cho", kashmiri: "بوی", kash_ipa: "/boj/", english: "Brother", pos: "noun", example: "Atro skulo nibai.", example_en: "Brother is going to school." },
-            { id: 54, burushaski: "yatis", bur_perso: "یَتِس", bur_ipa: "/jʌtis/", bur_std: "yatis", kashmiri: "کَلٕ", kash_ipa: "/kalɨ/", english: "Head", pos: "noun", example: "A-yatis ganibi.", example_en: "My head hurts." },
-            { id: 55, burushaski: "elching", bur_perso: "ایلچِنگ", bur_ipa: "/elt͡ʃing/", bur_std: "elching", kashmiri: "اَچھ", kash_ipa: "/at͡ʃʰ/", english: "Eye(s)", pos: "noun", example: "Elching yuwash.", example_en: "Open (your) eyes." },
-            { id: 56, burushaski: "impus", bur_perso: "اِمپُس", bur_ipa: "/impus/", bur_std: "gumpus", kashmiri: "نَس", kash_ipa: "/nas/", english: "Nose", pos: "noun", example: "Impus yurk bi.", example_en: "The nose is cold." },
-            { id: 57, burushaski: "ekhat", bur_perso: "ایکھَت", bur_ipa: "/ekʰʌt/", bur_std: "khat", kashmiri: "اَس", kash_ipa: "/as/", english: "Mouth", pos: "noun", example: "Ekhat eti.", example_en: "Open mouth (idiomatic)." },
-            { id: 58, burushaski: "ema", bur_perso: "ایما", bur_ipa: "/emʌ/", bur_std: "eme", kashmiri: "دَند", kash_ipa: "/dand/", english: "Tooth", pos: "noun", example: "Ema qaudiman.", example_en: "The tooth fell out." },
-            { id: 59, burushaski: "yutin", bur_perso: "یُٹِن", bur_ipa: "/jutin/", bur_std: "yutin", kashmiri: "کھوٗر", kash_ipa: "/kʰuːr/", english: "Foot", pos: "noun", example: "Yutin gurut.", example_en: "Wash feet." },
-            { id: 60, burushaski: "ghuying", bur_perso: "غویِنگ", bur_ipa: "/ɣujing/", bur_std: "ghuying", kashmiri: "مَس", kash_ipa: "/mas/", english: "Hair", pos: "noun", example: "Ghuying eikhan bila.", example_en: "The hair is long." },
-            { id: 61, burushaski: "gay", bur_perso: "گے", bur_ipa: "/gai/", bur_std: "gay", kashmiri: "شیٖن", kash_ipa: "/ʃiːn/", english: "Snow", pos: "noun", example: "Gay shuqulo.", example_en: "Snow is falling." },
-            { id: 62, burushaski: "karalo", bur_perso: "کَرلو", bur_ipa: "/kʌrʌlo/", bur_std: "karalo", kashmiri: "کَٹھ", kash_ipa: "/kaʈʰ/", english: "Sheep", pos: "noun", example: "Karalo gucaibi.", example_en: "The sheep is walking." },
-            { id: 63, burushaski: "bua", bur_perso: "بُوا", bur_ipa: "/buɑ/", bur_std: "bua", kashmiri: "گاو", kash_ipa: "/gaːv/", english: "Cow", pos: "noun", example: "Bua chil minibo.", example_en: "The cow is drinking water." },
-            { id: 64, burushaski: "bush", bur_perso: "بُش", bur_ipa: "/buʃ/", bur_std: "bush", kashmiri: "برٛوoر", kash_ipa: "/broːr/", english: "Cat", pos: "noun", example: "Bush miau etchibi.", example_en: "The cat says meow." },
-            { id: 65, burushaski: "ghaan", bur_perso: "غان", bur_ipa: "/ɣɑːn/", bur_std: "qa!", kashmiri: "کاو", kash_ipa: "/kaːv/", english: "Crow", pos: "noun", example: "Ghaan waalibi.", example_en: "The crow flies." },
-            { id: 66, burushaski: "tal", bur_perso: "ٹَل", bur_ipa: "/tʌl/", bur_std: "tal", kashmiri: "کوoتُر", kash_ipa: "/koːtur/", english: "Pigeon", pos: "noun", example: "Tal shapik shibei.", example_en: "The pigeon eats food." },
-            { id: 67, burushaski: "chagal", bur_perso: "چھَگَل", bur_ipa: "/t͡ʃʌgʌl/", bur_std: "chagal", kashmiri: "لوoہ", kash_ipa: "/loːh/", english: "Fox", pos: "noun", example: "Chagal turu etchibi.", example_en: "The fox looks." },
-            { id: 68, burushaski: "balt", bur_perso: "بَلٹ", bur_ipa: "/bʌlt/", bur_std: "balt", kashmiri: "ژوِّنٛٹ", kash_ipa: "/t͡suːnʈ/", english: "Apple", pos: "noun", example: "Balt shirin bila.", example_en: "The apple is sweet." },
-            { id: 69, burushaski: "khakayo", bur_perso: "کھَکَیو", bur_ipa: "/kʰʌkʌjo/", bur_std: "khakayo", kashmiri: "ڈوٗن", kash_ipa: "/duːn/", english: "Walnut", pos: "noun", example: "Khakayo thag eti.", example_en: "Break the walnut." },
-            { id: 70, burushaski: "hakichang", bur_perso: "ہَکیچنگ", bur_ipa: "/hʌkit͡ʃʌng/", bur_std: "hakichang", kashmiri: "مکانٕ", kash_ipa: "/makaːnɨ/", english: "Houses", pos: "noun (plural)", example: "Hakichang dur du.", example_en: "The houses are far." },
-            { id: 71, burushaski: "um", bur_perso: "اُم", bur_ipa: "/um/", bur_std: "un", kashmiri: "ژٕ", kash_ipa: "/t͡sɨ/", english: "You", pos: "pronoun", example: "Um be hal be?", example_en: "How are you?" },
-            { id: 72, burushaski: "saboor", bur_perso: "صبور", bur_ipa: "/sʌbuːr/", bur_std: "saboor", kashmiri: "راٹھ", kash_ipa: "/raːʈʰ/", english: "Yesterday", pos: "adverb", example: "Je saboor khole bam.", example_en: "I was here yesterday." }
+        // Enhanced Data Structure with Dialects
+        // dialect: 'srinagar' (Hari Parbat) or 'gilgit' (Hunza/Nagar/GB)
+        
+        const rawData = [
+            // --- SRINAGAR ENTRIES ---
+            { id: 1, dialect: "srinagar", burushaski: "a", bur_perso: "آ", bur_ipa: "/a/", bur_std: "a-", kashmiri: "مےٚ", kash_ipa: "/me/", english: "My / Mine", pos: "pronoun (prefix)", example: "A-baba Hari Parbat-ulo hurusho bo.", example_en: "My father lives in Hari Parbat." },
+            { id: 2, dialect: "srinagar", burushaski: "ba", bur_perso: "با", bur_ipa: "/bɑ/", bur_std: "ba", kashmiri: "چھُس", kash_ipa: "/t͡ʃʰus/", english: "I am (masculine)", pos: "verb (auxiliary)", example: "Je Srinagar-ulo ba.", example_en: "I am in Srinagar." },
+            { id: 3, dialect: "srinagar", burushaski: "bo", bur_perso: "بو", bur_ipa: "/bo/", bur_std: "bo", kashmiri: "چھَس", kash_ipa: "/t͡ʃʰas/", english: "I am (feminine)", pos: "verb (auxiliary)", example: "Je doktorya bo.", example_en: "I am a doctor (female)." },
+            { id: 4, dialect: "srinagar", burushaski: "chap", bur_perso: "چھاپ", bur_ipa: "/t͡ʃʌp/", bur_std: "chap", kashmiri: "ماز", kash_ipa: "/maːz/", english: "Meat", pos: "noun", example: "Ine chap shibei.", example_en: "He is eating meat." },
+            { id: 5, dialect: "srinagar", burushaski: "chil", bur_perso: "چھِل", bur_ipa: "/t͡ʃil/", bur_std: "chil", kashmiri: "پٲنۍ", kash_ipa: "/pəːɲ/", english: "Water", pos: "noun", example: "Chil mi.", example_en: "Drink water." },
+            { id: 6, dialect: "srinagar", burushaski: "dasin", bur_perso: "دَسین", bur_ipa: "/dʌsin/", bur_std: "dasin", kashmiri: "کوٗر", kash_ipa: "/kuːr/", english: "Girl / Unmarried woman", pos: "noun", example: "Dasin gane gatung gitsam.", example_en: "I bought clothes for the girl." },
+            { id: 7, dialect: "srinagar", burushaski: "hir", bur_perso: "ہِر", bur_ipa: "/hir/", bur_std: "hir", kashmiri: "مَرد", kash_ipa: "/mard/", english: "Man", pos: "noun", example: "Hir bazaare guccham.", example_en: "The man went to the market." },
+            { id: 8, dialect: "srinagar", burushaski: "gus", bur_perso: "گُس", bur_ipa: "/gus/", bur_std: "gus", kashmiri: "زَنان", kash_ipa: "/zanaːn/", english: "Woman", pos: "noun", example: "Guse haralt eitsubo.", example_en: "The woman sees the rain." },
+            { id: 9, dialect: "srinagar", burushaski: "je", bur_perso: "جے", bur_ipa: "/d͡ʒe/", bur_std: "je", kashmiri: "بٔ", kash_ipa: "/bɨ/", english: "I", pos: "pronoun", example: "Je Burusho ba.", example_en: "I am a Burusho." },
+            { id: 10, dialect: "srinagar", burushaski: "un", bur_perso: "اُن", bur_ipa: "/un/", bur_std: "un", kashmiri: "ژٕ", kash_ipa: "/t͡sɨ/", english: "You (singular)", pos: "pronoun", example: "Un ka be?", example_en: "Who are you?" },
+            { id: 11, dialect: "srinagar", burushaski: "mi", bur_perso: "می", bur_ipa: "/mi/", bur_std: "mi", kashmiri: "أسۍ", kash_ipa: "/əsʲ/", english: "We", pos: "pronoun", example: "Mi kashmiri maan ba.", example_en: "We are Kashmiri people." },
+            { id: 12, dialect: "srinagar", burushaski: "ma", bur_perso: "ما", bur_ipa: "/ma/", bur_std: "ma", kashmiri: "تُہۍ", kash_ipa: "/tuhʲ/", english: "You (plural)", pos: "pronoun", example: "Ma amin baa?", example_en: "Who are you (all)?" },
+            { id: 13, dialect: "srinagar", burushaski: "khu", bur_perso: "کھو", bur_ipa: "/kʰu/", bur_std: "khu", kashmiri: "یِم", kash_ipa: "/jim/", english: "These (proximal)", pos: "pronoun", example: "Khu gucchar chaman.", example_en: "These people are walking." },
+            { id: 14, dialect: "srinagar", burushaski: "ine", bur_perso: "اِنے", bur_ipa: "/ine/", bur_std: "ine", kashmiri: "سُہ / سۄ", kash_ipa: "/su (m) / sɔ (f)/", english: "He / She (distal)", pos: "pronoun", example: "Ine kitab poraibai.", example_en: "He is reading a book." },
+            { id: 15, dialect: "srinagar", burushaski: "sen", bur_perso: "سین", bur_ipa: "/sen/", bur_std: "sen-", kashmiri: "وَنُن", kash_ipa: "/wanun/", english: "To say / tell", pos: "verb", example: "Mo sen!", example_en: "Don't say it!" },
+            { id: 16, dialect: "srinagar", burushaski: "shapik", bur_perso: "شپِک", bur_ipa: "/ʃʌpik/", bur_std: "shapik", kashmiri: "ژوoٹ", kash_ipa: "/t͡soːt/", english: "Bread / Food", pos: "noun", example: "Shapik shi.", example_en: "Eat the bread." },
+            { id: 17, dialect: "srinagar", burushaski: "gupas", bur_perso: "گُپَس", bur_ipa: "/gupʌs/", bur_std: "gupas", kashmiri: "پَمبٕ", kash_ipa: "/pambɨ/", english: "Cotton", pos: "noun", example: "Gupas safed bila.", example_en: "The cotton is white." },
+            { id: 18, dialect: "srinagar", burushaski: "hiles", bur_perso: "ہِلیس", bur_ipa: "/hiles/", bur_std: "hiles", kashmiri: "نێچُہ", kash_ipa: "/net͡ʃuh/", english: "Boy", pos: "noun", example: "Hiles skul-ulo nibai.", example_en: "The boy is going to school." },
+            { id: 19, dialect: "srinagar", burushaski: "mama", bur_perso: "ماما", bur_ipa: "/mʌmʌ/", bur_std: "mama", kashmiri: "موج", kash_ipa: "/moːd͡ʒ/", english: "Mother", pos: "noun", example: "A-mama shiri bo.", example_en: "My mother is good/kind." },
+            { id: 20, dialect: "srinagar", burushaski: "baba", bur_perso: "بابا", bur_ipa: "/bʌbʌ/", bur_std: "baba", kashmiri: "مول", kash_ipa: "/moːl/", english: "Father", pos: "noun", example: "A-baba kami euci.", example_en: "My father does work." },
+            { id: 21, dialect: "srinagar", burushaski: "altan", bur_perso: "اَلتَن", bur_ipa: "/ʌltʌn/", bur_std: "altan", kashmiri: "زٕ", kash_ipa: "/zɨ/", english: "Two", pos: "numeral", example: "Altan hiri du.", example_en: "There are two men." },
+            { id: 22, dialect: "srinagar", burushaski: "han", bur_perso: "ہَن", bur_ipa: "/hʌn/", bur_std: "han", kashmiri: "اَکھ", kash_ipa: "/akʰ/", english: "One", pos: "numeral", example: "Han tsen.", example_en: "One bird." },
+            { id: 23, dialect: "srinagar", burushaski: "guro", bur_perso: "گُرو", bur_ipa: "/guro/", bur_std: "guro", kashmiri: "گَرٕم", kash_ipa: "/garɨm/", english: "Hot", pos: "adjective", example: "Chil guro bila.", example_en: "The water is hot." },
+            { id: 24, dialect: "srinagar", burushaski: "yurq", bur_perso: "یُرق", bur_ipa: "/jurq/", bur_std: "yurq", kashmiri: "یَکھ", kash_ipa: "/jakʰ/", english: "Cold", pos: "adjective", example: "Yurq neibila.", example_en: "It is not cold." },
+            { id: 25, dialect: "srinagar", burushaski: "bal", bur_perso: "بَل", bur_ipa: "/bʌl/", bur_std: "bal", kashmiri: "دیوار", kash_ipa: "/diːwaːr/", english: "Wall", pos: "noun", example: "Bal-ulo.", example_en: "On the wall." },
+            { id: 26, dialect: "srinagar", burushaski: "tom", bur_perso: "ٹوم", bur_ipa: "/tom/", bur_std: "tom", kashmiri: "کُل", kash_ipa: "/kul/", english: "Tree", pos: "noun", example: "Tom eikhan.", example_en: "The tree is tall." },
+            { id: 27, dialect: "srinagar", burushaski: "phu", bur_perso: "پھو", bur_ipa: "/pʰu/", bur_std: "phu", kashmiri: "نار", kash_ipa: "/naːr/", english: "Fire", pos: "noun", example: "Phu phetu.", example_en: "Light the fire." },
+            { id: 28, dialect: "srinagar", burushaski: "safed", bur_perso: "سفید", bur_ipa: "/sʌfed/", bur_std: "safed", kashmiri: "سَفیٖد", kash_ipa: "/safed/", english: "White", pos: "adjective", example: "Gatung safed bila.", example_en: "The clothes are white. (Note: Kashmiri loan commonly used)" },
+            { id: 29, dialect: "srinagar", burushaski: "shuq", bur_perso: "شُق", bur_ipa: "/ʃuq/", bur_std: "shuq", kashmiri: "وُزُل", kash_ipa: "/wuzul/", english: "Red", pos: "adjective", example: "Shuq phu.", example_en: "Red fire." },
+            { id: 30, dialect: "srinagar", burushaski: "shon", bur_perso: "شون", bur_ipa: "/ʃon/", bur_std: "shon", kashmiri: "اَنہٕ گوٹ", kash_ipa: "/anɨ goːt/", english: "Blind", pos: "adjective", example: "Ine hir shon bam.", example_en: "That man was blind." },
+            { id: 31, dialect: "srinagar", burushaski: "e", bur_perso: "اے", bur_ipa: "/e/", bur_std: "e", kashmiri: "آ", kash_ipa: "/aː/", english: "Yes / Q-Marker", pos: "particle", example: "Un guca bai e?", example_en: "Are you walking?" },
+            { id: 32, dialect: "srinagar", burushaski: "be", bur_perso: "بے", bur_ipa: "/be/", bur_std: "be", kashmiri: "نہ", kash_ipa: "/na/", english: "No", pos: "particle", example: "Be, je ni neyba.", example_en: "No, I am not going." },
+            { id: 33, dialect: "srinagar", burushaski: "ni", bur_perso: "نی", bur_ipa: "/ni/", bur_std: "ni-", kashmiri: "گَژھُن", kash_ipa: "/gat͡sʰun/", english: "To go", pos: "verb", example: "Je bazaarer nibaa.", example_en: "I am going to the market." },
+            { id: 34, dialect: "srinagar", burushaski: "ju", bur_perso: "جو", bur_ipa: "/d͡ʒu/", bur_std: "ju-", kashmiri: "یُن", kash_ipa: "/jun/", english: "To come", pos: "verb", example: "Khole ju!", example_en: "Come here!" },
+            { id: 35, dialect: "srinagar", burushaski: "hurus", bur_perso: "ہُرس", bur_ipa: "/hurus/", bur_std: "hurus-", kashmiri: "بِہُن", kash_ipa: "/bihun/", english: "To sit / dwell", pos: "verb", example: "Kursi-ulo hurus.", example_en: "Sit on the chair." },
+            { id: 36, dialect: "srinagar", burushaski: "shi", bur_perso: "شی", bur_ipa: "/ʃi/", bur_std: "shi-", kashmiri: "کھیوٚن", kash_ipa: "/kʰjon/", english: "To eat", pos: "verb", example: "Bate shi.", example_en: "Eat the rice." },
+            { id: 37, dialect: "srinagar", burushaski: "bate", bur_perso: "بتے", bur_ipa: "/bʌte/", bur_std: "bate", kashmiri: "بَتہٕ", kash_ipa: "/batɨ/", english: "Cooked Rice", pos: "noun", example: "Bate shirin bila.", example_en: "The rice is tasty." },
+            { id: 38, dialect: "srinagar", burushaski: "min", bur_perso: "مِن", bur_ipa: "/min/", bur_std: "min-", kashmiri: "چوٚن", kash_ipa: "/t͡ʃon/", english: "To drink", pos: "verb", example: "Chil mina.", example_en: "Drink water." },
+            { id: 39, dialect: "srinagar", burushaski: "waal", bur_perso: "وال", bur_ipa: "/waːl/", bur_std: "waal-", kashmiri: "وُٹھُن", kash_ipa: "/wutʰun/", english: "To fly", pos: "verb", example: "Tsen waalibi.", example_en: "The bird flies." },
+            { id: 40, dialect: "srinagar", burushaski: "haralt", bur_perso: "ہَرلت", bur_ipa: "/hʌrʌlt/", bur_std: "haralt", kashmiri: "روٗد", kash_ipa: "/ruːd/", english: "Rain", pos: "noun", example: "Haralt shuqulo.", example_en: "Rain is falling." },
+            { id: 41, dialect: "srinagar", burushaski: "huru", bur_perso: "ہُرو", bur_ipa: "/huru/", bur_std: "huru", kashmiri: "مَرد", kash_ipa: "/mard/", english: "Men (Plural)", pos: "noun", example: "Huru jam maan.", example_en: "The men gathered." },
+            { id: 42, dialect: "srinagar", burushaski: "gushingants", bur_perso: "گُشنگَنٹس", bur_ipa: "/guʃingʌnt͡s/", bur_std: "gushingants", kashmiri: "زَنانہٕ", kash_ipa: "/zanaːnɨ/", english: "Women (Plural)", pos: "noun", example: "Gushingants giratas.", example_en: "The women are dancing." },
+            { id: 43, dialect: "srinagar", burushaski: "chaman", bur_perso: "چمَن", bur_ipa: "/t͡ʃʌmʌn/", bur_std: "chaman", kashmiri: "پَکان", kash_ipa: "/pakaːn/", english: "Walking", pos: "verb (participle)", example: "Ine chaman bai.", example_en: "He is walking." },
+            { id: 44, dialect: "srinagar", burushaski: "khan", bur_perso: "کھَن", bur_ipa: "/kʰʌn/", bur_std: "khan", kashmiri: "قَلعہٕ", kash_ipa: "/qala/", english: "Fort", pos: "noun", example: "Hari Parbat khan.", example_en: "The Hari Parbat fort." },
+            { id: 45, dialect: "srinagar", burushaski: "shughulo", bur_perso: "شُغُلو", bur_ipa: "/ʃuɣulo/", bur_std: "shughulo", kashmiri: "کَٹھ", kash_ipa: "/katʰ/", english: "Talk / Conversation", pos: "noun", example: "Mi shughulo etchan.", example_en: "We are talking." },
+            { id: 46, dialect: "srinagar", burushaski: "eskul", bur_perso: "اسکول", bur_ipa: "/eskul/", bur_std: "eskul", kashmiri: "سکوٗل", kash_ipa: "/skuːl/", english: "School", pos: "noun", example: "Eskul dur bila.", example_en: "The school is far. (Loanword established in dialect)" },
+            { id: 47, dialect: "srinagar", burushaski: "ha", bur_perso: "ہا", bur_ipa: "/hʌ/", bur_std: "ha", kashmiri: "گَرٕ", kash_ipa: "/garɨ/", english: "House", pos: "noun", example: "A-ha Hari Parbat-ulo bila.", example_en: "My house is in Hari Parbat." },
+            { id: 48, dialect: "srinagar", burushaski: "yater", bur_perso: "یَتِر", bur_ipa: "/jʌter/", bur_std: "yater", kashmiri: "مَشہٕ ہِنٛد", kash_ipa: "/maʃɨhind/", english: "Up / Above", pos: "adverb", example: "Yater ni.", example_en: "Go up." },
+            { id: 49, dialect: "srinagar", burushaski: "mar", bur_perso: "مَر", bur_ipa: "/mʌr/", bur_std: "mar", kashmiri: "گِیو", kash_ipa: "/gʲaw/", english: "Butter / Ghee", pos: "noun", example: "Mar shi.", example_en: "Eat butter." },
+            { id: 50, dialect: "srinagar", burushaski: "phat", bur_perso: "پھَٹ", bur_ipa: "/pʰʌt/", bur_std: "phat", kashmiri: "تراوُن", kash_ipa: "/traːwun/", english: "Leave / Abandon (verb root)", pos: "verb", example: "Phat eti.", example_en: "Leave it." },
+            { id: 51, dialect: "srinagar", burushaski: "be hal be", bur_perso: "بے حال بے", bur_ipa: "/be hɑl be/", bur_std: "be hal be", kashmiri: "کیا حال چھُ", kash_ipa: "/kja haːl t͡ʃʰu/", english: "How are you?", pos: "phrase", example: "Le braya, be hal be?", example_en: "O brother, how are you?" },
+            { id: 52, dialect: "srinagar", burushaski: "aw", bur_perso: "آؤ", bur_ipa: "/au/", bur_std: "au", kashmiri: "مول", kash_ipa: "/moːl/", english: "Father", pos: "noun", example: "A-aw juwai.", example_en: "My father is coming." },
+            { id: 53, dialect: "srinagar", burushaski: "atro", bur_perso: "اَترو", bur_ipa: "/atro/", bur_std: "a-cho", kashmiri: "بوی", kash_ipa: "/boj/", english: "Brother", pos: "noun", example: "Atro skulo nibai.", example_en: "Brother is going to school." },
+            { id: 54, dialect: "srinagar", burushaski: "yatis", bur_perso: "یَتِس", bur_ipa: "/jʌtis/", bur_std: "yatis", kashmiri: "کَلٕ", kash_ipa: "/kalɨ/", english: "Head", pos: "noun", example: "A-yatis ganibi.", example_en: "My head hurts." },
+            { id: 55, dialect: "srinagar", burushaski: "elching", bur_perso: "ایلچِنگ", bur_ipa: "/elt͡ʃing/", bur_std: "elching", kashmiri: "اَچھ", kash_ipa: "/at͡ʃʰ/", english: "Eye(s)", pos: "noun", example: "Elching yuwash.", example_en: "Open (your) eyes." },
+            { id: 56, dialect: "srinagar", burushaski: "impus", bur_perso: "اِمپُس", bur_ipa: "/impus/", bur_std: "gumpus", kashmiri: "نَس", kash_ipa: "/nas/", english: "Nose", pos: "noun", example: "Impus yurk bi.", example_en: "The nose is cold." },
+            { id: 57, dialect: "srinagar", burushaski: "ekhat", bur_perso: "ایکھَت", bur_ipa: "/ekʰʌt/", bur_std: "khat", kashmiri: "اَس", kash_ipa: "/as/", english: "Mouth", pos: "noun", example: "Ekhat eti.", example_en: "Open mouth (idiomatic)." },
+            { id: 58, dialect: "srinagar", burushaski: "ema", bur_perso: "ایما", bur_ipa: "/emʌ/", bur_std: "eme", kashmiri: "دَند", kash_ipa: "/dand/", english: "Tooth", pos: "noun", example: "Ema qaudiman.", example_en: "The tooth fell out." },
+            { id: 59, dialect: "srinagar", burushaski: "yutin", bur_perso: "یُٹِن", bur_ipa: "/jutin/", bur_std: "yutin", kashmiri: "کھوٗر", kash_ipa: "/kʰuːr/", english: "Foot", pos: "noun", example: "Yutin gurut.", example_en: "Wash feet." },
+            { id: 60, dialect: "srinagar", burushaski: "ghuying", bur_perso: "غویِنگ", bur_ipa: "/ɣujing/", bur_std: "ghuying", kashmiri: "مَس", kash_ipa: "/mas/", english: "Hair", pos: "noun", example: "Ghuying eikhan bila.", example_en: "The hair is long." },
+            { id: 61, dialect: "srinagar", burushaski: "gay", bur_perso: "گے", bur_ipa: "/gai/", bur_std: "gay", kashmiri: "شیٖن", kash_ipa: "/ʃiːn/", english: "Snow", pos: "noun", example: "Gay shuqulo.", example_en: "Snow is falling." },
+            { id: 62, dialect: "srinagar", burushaski: "karalo", bur_perso: "کَرلو", bur_ipa: "/kʌrʌlo/", bur_std: "karalo", kashmiri: "کَٹھ", kash_ipa: "/kaʈʰ/", english: "Sheep", pos: "noun", example: "Karalo gucaibi.", example_en: "The sheep is walking." },
+            { id: 63, dialect: "srinagar", burushaski: "bua", bur_perso: "بُوا", bur_ipa: "/buɑ/", bur_std: "bua", kashmiri: "گاو", kash_ipa: "/gaːv/", english: "Cow", pos: "noun", example: "Bua chil minibo.", example_en: "The cow is drinking water." },
+            { id: 64, dialect: "srinagar", burushaski: "bush", bur_perso: "بُش", bur_ipa: "/buʃ/", bur_std: "bush", kashmiri: "برٛوoر", kash_ipa: "/broːr/", english: "Cat", pos: "noun", example: "Bush miau etchibi.", example_en: "The cat says meow." },
+            { id: 65, dialect: "srinagar", burushaski: "ghaan", bur_perso: "غان", bur_ipa: "/ɣɑːn/", bur_std: "qa!", kashmiri: "کاو", kash_ipa: "/kaːv/", english: "Crow", pos: "noun", example: "Ghaan waalibi.", example_en: "The crow flies." },
+            { id: 66, dialect: "srinagar", burushaski: "tal", bur_perso: "ٹَل", bur_ipa: "/tʌl/", bur_std: "tal", kashmiri: "کوoتُر", kash_ipa: "/koːtur/", english: "Pigeon", pos: "noun", example: "Tal shapik shibei.", example_en: "The pigeon eats food." },
+            { id: 67, dialect: "srinagar", burushaski: "chagal", bur_perso: "چھَگَل", bur_ipa: "/t͡ʃʌgʌl/", bur_std: "chagal", kashmiri: "لوoہ", kash_ipa: "/loːh/", english: "Fox", pos: "noun", example: "Chagal turu etchibi.", example_en: "The fox looks." },
+            { id: 68, dialect: "srinagar", burushaski: "balt", bur_perso: "بَلٹ", bur_ipa: "/bʌlt/", bur_std: "balt", kashmiri: "ژوِّنٛٹ", kash_ipa: "/t͡suːnʈ/", english: "Apple", pos: "noun", example: "Balt shirin bila.", example_en: "The apple is sweet." },
+            { id: 69, dialect: "srinagar", burushaski: "khakayo", bur_perso: "کھَکَیو", bur_ipa: "/kʰʌkʌjo/", bur_std: "khakayo", kashmiri: "ڈوٗن", kash_ipa: "/duːn/", english: "Walnut", pos: "noun", example: "Khakayo thag eti.", example_en: "Break the walnut." },
+            { id: 70, dialect: "srinagar", burushaski: "hakichang", bur_perso: "ہَکیچنگ", bur_ipa: "/hʌkit͡ʃʌng/", bur_std: "hakichang", kashmiri: "مکانٕ", kash_ipa: "/makaːnɨ/", english: "Houses", pos: "noun (plural)", example: "Hakichang dur du.", example_en: "The houses are far." },
+            { id: 71, dialect: "srinagar", burushaski: "um", bur_perso: "اُم", bur_ipa: "/um/", bur_std: "un", kashmiri: "ژٕ", kash_ipa: "/t͡sɨ/", english: "You", pos: "pronoun", example: "Um be hal be?", example_en: "How are you?" },
+            { id: 72, dialect: "srinagar", burushaski: "saboor", bur_perso: "صبور", bur_ipa: "/sʌbuːr/", bur_std: "saboor", kashmiri: "راٹھ", kash_ipa: "/raːʈʰ/", english: "Yesterday", pos: "adverb", example: "Je saboor khole bam.", example_en: "I was here yesterday." },
+            
+            // --- GILGIT-BALTISTAN (HUNZA/NAGAR) ENTRIES ---
+            // Extracted from Buruśo-Birkiş and General Hunza Knowledge to contrast
+            { id: 101, dialect: "gilgit", burushaski: "balaso", bur_perso: "بلاسو", bur_ipa: "/balaso/", bur_std: "balaso", kashmiri: "جانور", kash_ipa: "/d͡ʒaːnwar/", english: "Birds (General)", pos: "noun", example: "Balaso gane dan.", example_en: "Grain for the birds.", source: "Buruśo-Birkiş (PDF)" },
+            { id: 102, dialect: "gilgit", burushaski: "hoycin", bur_perso: "ہویچِن", bur_ipa: "/hoyt͡sin/", bur_std: "hoycin", kashmiri: "سَبزی", kash_ipa: "/sabzi/", english: "Vegetables / Greens", pos: "noun", example: "Hoycin gane chil.", example_en: "Water for the vegetables.", source: "Buruśo-Birkiş (PDF)" },
+            { id: 103, dialect: "gilgit", burushaski: "girmin", bur_perso: "گرمن", bur_ipa: "/girmin/", bur_std: "girmin-", kashmiri: "لیکھُن", kash_ipa: "/lekʰun/", english: "To write", pos: "verb", example: "Nasir sahib kitab girmimi.", example_en: "Mr. Nasir wrote the book.", source: "Buruśo-Birkiş (Title)" },
+            { id: 104, dialect: "gilgit", burushaski: "famol", bur_perso: "فمول", bur_ipa: "/famol/", bur_std: "pfamol", kashmiri: "میوٕ", kash_ipa: "/mewɨ/", english: "Fruits", pos: "noun", example: "Famol shirin bila.", example_en: "The fruit is sweet.", source: "Buruśo-Birkiş (PDF)" },
+            { id: 105, dialect: "gilgit", burushaski: "jandaar", bur_perso: "جاندار", bur_ipa: "/d͡ʒandaːr/", bur_std: "jandaar", kashmiri: "جانور", kash_ipa: "/d͡ʒaːnwar/", english: "Animals", pos: "noun", example: "Jandaar uyo.", example_en: "Feed the animals.", source: "Buruśo-Birkiş (PDF)" },
+            { id: 106, dialect: "gilgit", burushaski: "khircanc", bur_perso: "خرچنچ", bur_ipa: "/xirt͡ʃant͡s/", bur_std: "khirchanc", kashmiri: "کیٖرٕ", kash_ipa: "/kiːrɨ/", english: "Insects / Creepy-crawlies", pos: "noun", example: "Khircanc bi.", example_en: "There are insects.", source: "Buruśo-Birkiş (PDF)" },
+            { id: 107, dialect: "gilgit", burushaski: "saamaan", bur_perso: "سامان", bur_ipa: "/saːmaːn/", bur_std: "saamaan", kashmiri: "سامان", kash_ipa: "/saːmaːn/", english: "Things / Luggage", pos: "noun", example: "Saamaan khole.", example_en: "Put luggage here.", source: "Buruśo-Birkiş (PDF)" },
+            { id: 108, dialect: "gilgit", burushaski: "je", bur_perso: "جے", bur_ipa: "/d͡ʒe/", bur_std: "je", kashmiri: "بٔ", kash_ipa: "/bɨ/", english: "I", pos: "pronoun", example: "Je Hunzo-ulo ba.", example_en: "I am in Hunza.", source: "Standard Hunza" },
+            { id: 109, dialect: "gilgit", burushaski: "chap", bur_perso: "چھاپ", bur_ipa: "/t͡ʃap/", bur_std: "chap", kashmiri: "ماز", kash_ipa: "/maːz/", english: "Meat", pos: "noun", example: "Chap shi.", example_en: "Eat meat.", source: "Standard Hunza" },
+            { id: 110, dialect: "gilgit", burushaski: "sa", bur_perso: "سا", bur_ipa: "/sa/", bur_std: "sa", kashmiri: "آفتاب", kash_ipa: "/aːftaːb/", english: "Sun", pos: "noun", example: "Sa waalibi.", example_en: "The sun is rising.", source: "Standard Hunza" },
+
+            // --- NEW ENTRIES FROM UPLOADED VOLUMES ---
+            { id: 111, dialect: "gilgit", burushaski: "bayu", bur_perso: "بیو", bur_ipa: "/baju/", bur_std: "bayu", kashmiri: "نوٗن", kash_ipa: "/nuːn/", english: "Salt", pos: "noun", example: "Bayu doro bila.", example_en: "The salt is hard.", source: "Burushaski-Urdu Lughat Vol 1" },
+            { id: 112, dialect: "gilgit", burushaski: "burum", bur_perso: "بُروم", bur_ipa: "/burum/", bur_std: "burum", kashmiri: "سَفیٖد", kash_ipa: "/safeːd/", english: "White", pos: "adjective", example: "Burum gupas.", example_en: "White cotton.", source: "Burushaski-Urdu Lughat Vol 1" },
+            { id: 113, dialect: "gilgit", burushaski: "mulgim", bur_perso: "مُلگِم", bur_ipa: "/mulgim/", bur_std: "mulgim", kashmiri: "کرُہُن", kash_ipa: "/kruhun/", english: "Black", pos: "adjective", example: "Mulgim ha.", example_en: "Black house.", source: "Burushaski-Urdu Lughat Vol 3" },
+            { id: 114, dialect: "gilgit", burushaski: "gare", bur_perso: "گرے", bur_ipa: "/gare/", bur_std: "gare", kashmiri: "کَنَک", kash_ipa: "/kanak/", english: "Wheat", pos: "noun", example: "Gare gane.", example_en: "Wheat grain.", source: "Burushaski-Urdu Lughat Vol 2" },
+            { id: 115, dialect: "gilgit", burushaski: "juu", bur_perso: "جو", bur_ipa: "/d͡ʒuː/", bur_std: "juu", kashmiri: "ژیٖر", "kash_ipa": "/t͡sɨːr/", english: "Apricot", pos: "noun", example: "Juu shirin bila.", example_en: "The apricot is sweet.", source: "Burushaski-Urdu Lughat Vol 1" },
+            { id: 116, dialect: "gilgit", burushaski: "balo", bur_perso: "بلو", bur_ipa: "/balo/", bur_std: "balo", kashmiri: "ڈوٗن", kash_ipa: "/duːn/", english: "Walnut", pos: "noun", example: "Balo thag eti.", example_en: "Smash the walnut.", source: "Burushaski-Urdu Lughat Vol 1" },
+            { id: 117, dialect: "gilgit", burushaski: "halanza", bur_perso: "ہلنزہ", bur_ipa: "/halanza/", bur_std: "halanza", kashmiri: "زوٗن", kash_ipa: "/zuːn/", english: "Moon", pos: "noun", example: "Halanza daltas bila.", example_en: "The moon is beautiful.", source: "Burushaski-Urdu Lughat Vol 3" },
+            { id: 118, dialect: "gilgit", burushaski: "asumun", bur_perso: "آسومون", bur_ipa: "/asumun/", bur_std: "asumun", kashmiri: "تارُک", kash_ipa: "/taːruk/", english: "Star", pos: "noun", example: "Asumun yater.", example_en: "Star above.", source: "Burushaski-Urdu Lughat Vol 1" },
+            { id: 119, dialect: "gilgit", burushaski: "tik", bur_perso: "ٹِک", bur_ipa: "/tik/", bur_std: "tik", kashmiri: "مِٹہٕ", kash_ipa: "/miʈɨ/", english: "Earth / Soil", pos: "noun", example: "Tik gane.", example_en: "For the earth.", source: "Burushaski-Urdu Lughat Vol 1" },
+            { id: 120, dialect: "gilgit", burushaski: "heki", bur_perso: "ہیکی", bur_ipa: "/heki/", bur_std: "heki", kashmiri: "پگاہ", kash_ipa: "/pagaːh/", english: "Tomorrow", pos: "adverb", example: "Heki ju.", example_en: "Come tomorrow.", source: "Burushaski-Urdu Lughat Vol 3" },
+            { id: 121, dialect: "gilgit", burushaski: "daltas", bur_perso: "دلتس", bur_ipa: "/daltas/", bur_std: "daltas", kashmiri: "خوٗبصوٗرت", kash_ipa: "/xuːbsuːrat/", english: "Beautiful", pos: "adjective", example: "Dasin daltas bo.", example_en: "The girl is beautiful.", source: "Burushaski-Urdu Lughat Vol 2" },
+            { id: 122, dialect: "gilgit", burushaski: "tish", bur_perso: "ٹِش", bur_ipa: "/tiʃ/", bur_std: "tish", kashmiri: "ہوا", kash_ipa: "/hawaː/", english: "Wind", pos: "noun", example: "Tish guro bila.", example_en: "The wind is hot.", source: "Burushaski-Urdu Lughat Vol 1" },
+            { id: 123, dialect: "gilgit", burushaski: "gus", bur_perso: "گُس", bur_ipa: "/gus/", bur_std: "gus", kashmiri: "زَنان", kash_ipa: "/zanaːn/", english: "Woman", pos: "noun", example: "Gus hurusho bo.", example_en: "The woman is sitting.", source: "Burushaski-Urdu Lughat Vol 2" },
+            { id: 124, dialect: "gilgit", burushaski: "hir", bur_perso: "ہِر", bur_ipa: "/hir/", bur_std: "hir", kashmiri: "مَرد", kash_ipa: "/mard/", english: "Man", pos: "noun", example: "Hir leil manimi.", example_en: "The man was found.", source: "Burushaski-Urdu Lughat Vol 3" },
+            { id: 125, dialect: "gilgit", burushaski: "jil", bur_perso: "جِل", bur_ipa: "/d͡ʒil/", bur_std: "jil", kashmiri: "یار", kash_ipa: "/jaːr/", english: "Friend", pos: "noun", example: "A-jil", example_en: "My friend", source: "Burushaski-Urdu Lughat Vol 1" },
+            
+            // --- NEW ENTRIES FROM ANALYSIS TEXT ---
+            { id: 126, dialect: "gilgit", burushaski: "jatis", bur_perso: "یٹِس", bur_ipa: "/jaʈis/", bur_std: "yatis", kashmiri: "کَلٕ", kash_ipa: "/kalɨ/", english: "Head", pos: "noun (inalienable)", example: "A-jatis.", example_en: "My head.", source: "Hunza-Nagar Analysis" },
+            { id: 127, dialect: "gilgit", burushaski: "iltumal", bur_perso: "اِلتومل", bur_ipa: "/iltumal/", bur_std: "iltumal", kashmiri: "کَن", kash_ipa: "/kan/", english: "Ear", pos: "noun (inalienable)", example: "I-ltumal.", example_en: "His ear.", source: "Hunza-Nagar Analysis" },
+            { id: 128, dialect: "gilgit", burushaski: "iskil", bur_perso: "اِسکِل", bur_ipa: "/iskil/", bur_std: "iskil", kashmiri: "بُتھ", kash_ipa: "/butʰ/", english: "Face", pos: "noun", example: "Mu-skil daltas bila.", example_en: "Her face is beautiful.", source: "Hunza-Nagar Analysis" },
+            { id: 129, dialect: "gilgit", burushaski: "iltshin", bur_perso: "اِلچھِن", bur_ipa: "/ilt͡ʃin/", bur_std: "elching", kashmiri: "اَچھ", kash_ipa: "/at͡ʃʰ/", english: "Eye", pos: "noun", example: "I-ltshin.", example_en: "His eye.", source: "Hunza-Nagar Analysis" },
+            { id: 130, dialect: "gilgit", burushaski: "mupush", bur_perso: "موپُش", bur_ipa: "/mupuʂ/", bur_std: "mupush", kashmiri: "نَس", kash_ipa: "/nas/", english: "Nose", pos: "noun", example: "G-upush.", example_en: "Your nose.", source: "Hunza-Nagar Analysis" },
+            { id: 131, dialect: "gilgit", burushaski: "ju'umus", bur_perso: "جوؤمُس", bur_ipa: "/juumus/", bur_std: "juumus", kashmiri: "زیو", kash_ipa: "/zev/", english: "Tongue", pos: "noun", example: "I-ju'umus.", example_en: "His tongue.", source: "Hunza-Nagar Analysis" },
+            { id: 132, dialect: "gilgit", burushaski: "es", bur_perso: "ایس", bur_ipa: "/ɛs/", bur_std: "es", kashmiri: "دِل", kash_ipa: "/dil/", english: "Heart", pos: "noun", example: "A-es.", example_en: "My heart.", source: "Hunza-Nagar Analysis" },
+            { id: 133, dialect: "gilgit", burushaski: "multan", bur_perso: "مُلتَن", bur_ipa: "/multʌn/", bur_std: "multan", kashmiri: "رَتھ", kash_ipa: "/ratʰ/", english: "Blood", pos: "noun", example: "Multan shuqulo.", example_en: "Blood is dripping (falling).", source: "Hunza-Nagar Analysis" },
+            { id: 134, dialect: "gilgit", burushaski: "aya", bur_perso: "آیہ", bur_ipa: "/aja/", bur_std: "aya", kashmiri: "مول", kash_ipa: "/moːl/", english: "Father", pos: "noun", example: "A-ya juwai.", example_en: "My father comes.", source: "Hunza-Nagar Analysis" },
+            { id: 135, dialect: "gilgit", burushaski: "nana", bur_perso: "نانا", bur_ipa: "/nana/", bur_std: "nana", kashmiri: "مام / پوپھ", kash_ipa: "/maːm / popʰ/", english: "Maternal Uncle / Paternal Aunt", pos: "noun", example: "A-nana.", example_en: "My uncle/aunt (Nagar dialect).", source: "Hunza-Nagar Analysis" },
+            { id: 136, dialect: "gilgit", burushaski: "chigir", bur_perso: "چھِگِیر", bur_ipa: "/t͡ʃʰigir/", bur_std: "chigir", kashmiri: "ژھاوُل", kash_ipa: "/t͡sʰaːwul/", english: "Goat", pos: "noun", example: "Chigir du.", example_en: "The goat is there.", source: "Hunza-Nagar Analysis" },
+            { id: 137, dialect: "gilgit", burushaski: "huk", bur_perso: "ہُک", bur_ipa: "/huk/", bur_std: "huk", kashmiri: "ہوٗن", kash_ipa: "/huːn/", english: "Dog", pos: "noun", example: "Huk gucaibi.", example_en: "The dog walks.", source: "Hunza-Nagar Analysis" },
+            { id: 138, dialect: "gilgit", burushaski: "dan", bur_perso: "دَن", bur_ipa: "/dan/", bur_std: "dan", kashmiri: "کٔنۍ", kash_ipa: "/kanʲ/", english: "Stone", pos: "noun", example: "Dan gaaḍu bila.", example_en: "The stone is big.", source: "Hunza-Nagar Analysis" },
+            { id: 139, dialect: "gilgit", burushaski: "sinda", bur_perso: "سِندہ", bur_ipa: "/sinda/", bur_std: "sinda", kashmiri: "دٔریاو", kash_ipa: "/darjaːv/", english: "River", pos: "noun", example: "Sinda walibi.", example_en: "The river flows.", source: "Hunza-Nagar Analysis" },
+            { id: 140, dialect: "gilgit", burushaski: "qhurunc", bur_perso: "قُھرُنچ", bur_ipa: "/qʰurunt͡s/", bur_std: "qhurunc", kashmiri: "اۆبُر", kash_ipa: "/obur/", english: "Cloud", pos: "noun", example: "Qhurunc bi.", example_en: "There are clouds.", source: "Hunza-Nagar Analysis" },
+            { id: 141, dialect: "gilgit", burushaski: "tinan", bur_perso: "تِنَن", bur_ipa: "/tiŋan/", bur_std: "tinan", kashmiri: "تھوٗل", kash_ipa: "/tʰuːl/", english: "Egg", pos: "noun", example: "Tinan shi.", example_en: "Eat the egg.", source: "Hunza-Nagar Analysis" },
+            { id: 142, dialect: "gilgit", burushaski: "matum", bur_perso: "مَتُم", bur_ipa: "/matum/", bur_std: "matum", kashmiri: "کرُہُن", kash_ipa: "/kruhun/", english: "Black", pos: "adjective", example: "Matum huk.", example_en: "Black dog.", source: "Hunza-Nagar Analysis" },
+            { id: 143, dialect: "gilgit", burushaski: "bardum", bur_perso: "باردُم", bur_ipa: "/baːrdum/", bur_std: "bardum", kashmiri: "وُزُل", kash_ipa: "/wuzul/", english: "Red", pos: "adjective", example: "Bardum gatung.", example_en: "Red clothes.", source: "Hunza-Nagar Analysis" },
+            { id: 144, dialect: "gilgit", burushaski: "eshqam", bur_perso: "ایشقَم", bur_ipa: "/eʃqam/", bur_std: "eshqam", kashmiri: "سَبز", kash_ipa: "/sabz/", english: "Green", pos: "adjective", example: "Eshqam tom.", example_en: "Green tree.", source: "Hunza-Nagar Analysis" },
+            { id: 145, dialect: "gilgit", burushaski: "shikark", bur_perso: "شِکرک", bur_ipa: "/ʃikark/", bur_std: "shikark", kashmiri: "لیۆدُر", kash_ipa: "/ljodur/", english: "Yellow", pos: "adjective", example: "Shikark sa.", example_en: "Yellow sun.", source: "Hunza-Nagar Analysis" },
+            { id: 146, dialect: "gilgit", burushaski: "khulto", bur_perso: "کھُلتو", bur_ipa: "/xulto/", bur_std: "khulto", kashmiri: "اَز", kash_ipa: "/az/", english: "Today", pos: "adverb", example: "Khulto haralt shuqulo.", example_en: "It is raining today.", source: "Hunza-Nagar Analysis" },
+            { id: 147, dialect: "gilgit", burushaski: "jimaly", bur_perso: "جِمالے", bur_ipa: "/d͡ʒimali/", bur_std: "jimaly", kashmiri: "پگاہ", kash_ipa: "/pagaːh/", english: "Tomorrow", pos: "adverb", example: "Jimaly ju.", example_en: "Come tomorrow.", source: "Hunza-Nagar Analysis" },
+            { id: 148, dialect: "gilgit", burushaski: "shua", bur_perso: "شوعہ", bur_ipa: "/ʃua/", bur_std: "shua", kashmiri: "اَصٕل", kash_ipa: "/asɨl/", english: "Good / Fine", pos: "adjective", example: "Shua ba.", example_en: "I am fine.", source: "Hunza-Nagar Analysis" },
+            { id: 149, dialect: "gilgit", burushaski: "uyam", bur_perso: "اُیم", bur_ipa: "/ujam/", bur_std: "uyam", kashmiri: "موٚدُر", kash_ipa: "/modur/", english: "Sweet", pos: "adjective", example: "Uyam famol.", example_en: "Sweet fruit.", source: "Hunza-Nagar Analysis" },
+            { id: 150, dialect: "gilgit", burushaski: "thos", bur_perso: "تھوش", bur_ipa: "/tʰoʂ/", bur_std: "thos", kashmiri: "نۆو", kash_ipa: "/now/", english: "New", pos: "adjective", example: "Thos ha.", example_en: "New house.", source: "Hunza-Nagar Analysis" },
+            { id: 151, dialect: "gilgit", burushaski: "be gumay baa", bur_perso: "بے گُمے با", bur_ipa: "/be gume baː/", bur_std: "be gumay baa", kashmiri: "سہُ چھا ٹھیک", kash_ipa: "/su t͡ʃʰaː ʈʰiːk/", english: "How are you?", pos: "phrase", example: "Le jil, be gumay baa?", example_en: "O friend, how are you?", source: "Hunza-Nagar Analysis" },
+            { id: 152, dialect: "gilgit", burushaski: "ju na", bur_perso: "جو نا", bur_ipa: "/d͡ʒu na/", bur_std: "juna", kashmiri: "شُکریہ", kash_ipa: "/ʃukrija/", english: "Thank you", pos: "phrase", example: "Ju na, braya.", example_en: "Thank you, brother.", source: "Hunza-Nagar Analysis" }
         ];
+
+        let dictionaryData = rawData;
+        let currentDialect = 'srinagar';
 
         // DOM Elements
         const list = document.getElementById('dictionary-list');
         const searchInput = document.getElementById('searchInput');
         const showingCount = document.getElementById('showing-count');
         const noResults = document.getElementById('no-results');
+        const toast = document.getElementById('toast');
+        const wordOfDayContent = document.getElementById('word-of-day-content');
+        const dialectSubtitle = document.getElementById('dialect-subtitle');
+        const dialectNote = document.getElementById('dialect-note');
         
         let currentFilter = 'all';
+
+        function switchDialect(newDialect) {
+            currentDialect = newDialect;
+            
+            // Update UI Labels
+            if(currentDialect === 'srinagar') {
+                dialectSubtitle.textContent = "Srinagar Dialect";
+                dialectNote.textContent = "This dictionary focuses on the Srinagar variant, which often exhibits vowel centralization (e.g., /a/ → /ʌ/) compared to Hunza forms.";
+                // Update Word of Day for Srinagar
+                wordOfDayContent.innerHTML = `
+                    <div class="mb-4">
+                        <span class="block font-serif text-3xl text-[#003366] font-bold">shughulo</span>
+                        <span class="text-base text-gray-500 italic">noun</span>
+                        <p class="mt-2 text-lg text-gray-700">Conversation; friendly talk.</p>
+                    </div>
+                `;
+            } else {
+                dialectSubtitle.textContent = "Gilgit-Baltistan (Hunza/Nagar)";
+                dialectNote.textContent = "This dictionary represents the dialect spoken in Hunza and Nagar valleys of Gilgit-Baltistan. Extracted from 'Buruśo-Birkiş' and 'Burushaski-Urdu Lughat'.";
+                // Update Word of Day for Gilgit
+                wordOfDayContent.innerHTML = `
+                    <div class="mb-4">
+                        <span class="block font-serif text-3xl text-[#003366] font-bold">balaso</span>
+                        <span class="text-base text-gray-500 italic">noun</span>
+                        <p class="mt-2 text-lg text-gray-700">Birds; winged creatures.</p>
+                    </div>
+                `;
+            }
+
+            // Re-filter entries
+            filterEntries();
+        }
 
         function renderEntries(entries) {
             list.innerHTML = '';
@@ -333,36 +502,37 @@
                 
                 item.innerHTML = `
                     <div class="flex flex-col md:flex-row md:items-baseline gap-2 mb-2">
-                        <h3 class="text-2xl font-bold headword cursor-pointer hover:text-[#003366] transition-colors" onclick="speakEntry(${entry.id})">
+                        <h3 class="text-3xl font-bold headword cursor-pointer hover:text-[#003366] transition-colors" onclick="speakEntry(${entry.id})">
                             ${entry.burushaski}
                         </h3>
-                        <div class="flex items-center gap-2 text-sm">
+                        <div class="flex items-center gap-2 text-base">
                             <span class="ipa">/${entry.bur_ipa.replace(/\//g, '')}/</span>
                             <button onclick="speakEntry(${entry.id})" class="text-blue-700 hover:text-blue-900 transition-colors" title="Listen">
                                 <i class="fas fa-volume-up"></i>
                             </button>
                             <span class="pos-tag ml-1">${entry.pos}</span>
+                            ${entry.source ? `<span class="text-[10px] bg-gray-100 text-gray-500 px-1 rounded ml-2" title="${entry.source}">SRC</span>` : ''}
                         </div>
                     </div>
                     
                     <div class="mb-2">
-                        <span class="ur-text text-xl text-gray-600 mr-2" dir="rtl">${entry.bur_perso}</span>
+                        <span class="ur-text text-3xl text-gray-600 mr-2" dir="rtl">${entry.bur_perso}</span>
                     </div>
 
                     <div class="mb-3">
-                        <p class="text-gray-900 font-serif leading-relaxed">
+                        <p class="text-gray-900 text-lg font-serif leading-relaxed">
                             <span class="font-bold text-gray-700">1.</span> ${entry.english}
                         </p>
                     </div>
 
                     <div class="pl-4 border-l-2 border-gray-100 mb-3">
-                        <p class="text-gray-600 italic font-serif text-sm">"${entry.example}"</p>
+                        <p class="text-gray-600 italic font-serif text-base">"${entry.example}"</p>
                         <p class="text-gray-500 text-sm mt-0.5">— ${entry.example_en}</p>
                     </div>
 
                     <div class="flex items-center gap-2 mt-3 pt-2 border-t border-dotted border-gray-200">
                         <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Kashmiri:</span>
-                        <span class="ur-text text-lg text-[#003366]" dir="rtl">${entry.kashmiri}</span>
+                        <span class="ur-text text-xl text-[#003366]" dir="rtl">${entry.kashmiri}</span>
                         <span class="text-xs text-gray-400 font-mono">[${entry.kash_ipa}]</span>
                         <div class="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
                             <button onclick="copyEntry(${entry.id})" class="text-gray-400 hover:text-[#002147] text-xs uppercase font-bold tracking-wider">
@@ -392,6 +562,9 @@
         function filterEntries() {
             const searchTerm = searchInput.value.toLowerCase();
             const filtered = dictionaryData.filter(entry => {
+                // Must match current dialect
+                if (entry.dialect !== currentDialect) return false;
+
                 const matchesSearch = 
                     entry.burushaski.toLowerCase().includes(searchTerm) ||
                     entry.english.toLowerCase().includes(searchTerm) ||
@@ -403,7 +576,7 @@
             renderEntries(filtered);
         }
 
-        // --- Audio & Utilities (Same robust logic as before) ---
+        // --- Audio & Utilities ---
         let availableVoices = [];
         function loadVoices() { availableVoices = window.speechSynthesis.getVoices(); }
         loadVoices();
@@ -412,6 +585,7 @@
         function speakEntry(id) {
             const entry = dictionaryData.find(e => e.id === id);
             if (!entry) return;
+            // Try local file first (mock path)
             const audioPath = `audio/${id}.mp3`;
             const audio = new Audio(audioPath);
             audio.addEventListener('error', () => speakTextFallback(entry.bur_perso));
@@ -423,6 +597,7 @@
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             if (availableVoices.length === 0) loadVoices();
+            // Try to find a voice that supports Urdu or Hindi script
             const preferredVoice = availableVoices.find(v => v.lang.includes('ur') || v.lang.includes('hi'));
             if (preferredVoice) utterance.voice = preferredVoice;
             utterance.rate = 0.8;
@@ -434,8 +609,10 @@
             if (!entry) return;
             const text = `${entry.burushaski} (${entry.pos})
 Definition: ${entry.english}
-Kashmiri: ${entry.kashmiri}`;
+Kashmiri: ${entry.kashmiri}
+Dialect: ${entry.dialect === 'srinagar' ? 'Srinagar (Hari Parbat)' : 'Gilgit-Baltistan'}`;
             
+            // Clipboard logic
             const textArea = document.createElement("textarea");
             textArea.value = text;
             textArea.style.position = "fixed";
@@ -445,9 +622,14 @@ Kashmiri: ${entry.kashmiri}`;
             textArea.select();
             try {
                 document.execCommand('copy');
-                alert("Citation copied.");
+                showToast(); // Show the toast instead of alert
             } catch (err) { console.error(err); }
             document.body.removeChild(textArea);
+        }
+
+        function showToast() {
+            toast.className = "show";
+            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
         }
 
         function toggleSourceModal() {
@@ -456,7 +638,10 @@ Kashmiri: ${entry.kashmiri}`;
         }
 
         searchInput.addEventListener('input', filterEntries);
-        renderEntries(dictionaryData);
+        
+        // Initial Render - filtering for default dialect
+        filterEntries();
     </script>
 </body>
 </html>
+
