@@ -3,19 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Burushaski Dictionary</title>
+    <title>Burushaski-Kashmiri Dictionary</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400&family=Open+Sans:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans:wght@400;700&display=swap');
-        
+        :root {
+            --oxford-blue: #002147;
+            --oxford-light-blue: #003366;
+            --text-main: #333333;
+            --text-sub: #5d6872;
+            --bg-page: #ffffff;
+            --bg-accent: #f2f7fb;
+            --divider: #e0e4e9;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+        }
+
+        .serif-font {
+            font-family: 'Merriweather', serif;
         }
         
-        .burushaski-font {
+        .headword {
+            font-family: 'Merriweather', serif;
+            color: var(--oxford-blue);
+        }
+
+        .ur-text {
+            font-family: 'Noto Nastaliq Urdu', serif;
+            direction: rtl;
+            line-height: 2.0;
+        }
+
+        .ipa {
             font-family: 'Noto Sans', sans-serif;
+            color: var(--text-sub);
+        }
+
+        /* Dictionary Entry Styling */
+        .dict-entry {
+            border-bottom: 1px solid var(--divider);
+            padding: 1.5rem 0;
+            transition: background-color 0.2s;
+        }
+        
+        .dict-entry:hover {
+            background-color: #fafbfd;
+        }
+
+        .pos-tag {
+            color: var(--oxford-light-blue);
+            font-style: italic;
+            font-family: 'Merriweather', serif;
+            font-weight: 700;
+        }
+
+        /* Controls styling */
+        .filter-chip {
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .filter-chip.active {
+            background-color: var(--oxford-blue);
+            color: white;
+            border-color: var(--oxford-blue);
+        }
+        .filter-chip:hover:not(.active) {
+            background-color: #e5e7eb;
         }
 
         /* Custom Scrollbar */
@@ -23,255 +84,379 @@
             width: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #f1f1f1; 
         }
         ::-webkit-scrollbar-thumb {
-            background: #c7c7cc;
+            background: #b0b8c1; 
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #a1a1aa;
+            background: #909aa5; 
         }
     </style>
 </head>
-<body class="text-gray-800 min-h-screen flex flex-col">
+<body class="flex flex-col min-h-screen">
 
-    <!-- Hero Section -->
-    <header class="bg-gradient-to-r from-indigo-700 to-blue-600 text-white shadow-lg">
-        <div class="max-w-6xl mx-auto px-4 py-8 md:py-12">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div class="mb-6 md:mb-0 text-center md:text-left">
-                    <h1 class="text-3xl md:text-5xl font-bold mb-2 tracking-tight">Burushaski Dictionary</h1>
-                    <p class="text-indigo-100 text-lg opacity-90">Exploring the language of the Hunza, Nagar, and Yasin valleys.</p>
+    <!-- Oxford-style Header -->
+    <header class="bg-[#002147] text-white">
+        <div class="container mx-auto px-4 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-white text-[#002147] rounded-sm flex items-center justify-center font-serif font-bold text-xl shadow-sm">
+                    BD
                 </div>
-                <div class="hidden md:block">
-                    <i class="fas fa-mountain text-6xl text-indigo-300 opacity-50"></i>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-serif font-bold tracking-tight">Burushaski Dictionary</h1>
+                    <p class="text-[10px] uppercase tracking-widest text-blue-200">Srinagar Dialect</p>
                 </div>
             </div>
-            
-            <!-- Search Bar -->
-            <div class="mt-8 relative max-w-2xl">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-search text-gray-400"></i>
-                </div>
-                <input type="text" id="searchInput" placeholder="Search for a word in English or Burushaski..." 
-                    class="block w-full pl-10 pr-3 py-4 border-none rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-indigo-300 shadow-xl transition-all">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSourceModal()" class="text-sm font-medium hover:text-blue-200 transition-colors flex items-center gap-2">
+                    <i class="fas fa-info-circle"></i> <span class="hidden md:inline">About / Sources</span>
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="flex-grow max-w-6xl mx-auto px-4 py-8 w-full">
-        
-        <!-- Category Filters -->
-        <div class="flex flex-wrap gap-2 mb-8 justify-center md:justify-start" id="filterContainer">
-            <button onclick="filterWords('all')" class="filter-btn active px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-semibold shadow transition-transform hover:scale-105">All</button>
-            <button onclick="filterWords('common')" class="filter-btn px-4 py-2 rounded-full bg-white text-gray-600 text-sm font-semibold shadow hover:bg-gray-50 transition-transform hover:scale-105">Nouns & People</button>
-            <button onclick="filterWords('pronouns')" class="filter-btn px-4 py-2 rounded-full bg-white text-gray-600 text-sm font-semibold shadow hover:bg-gray-50 transition-transform hover:scale-105">Pronouns</button>
-            <button onclick="filterWords('time')" class="filter-btn px-4 py-2 rounded-full bg-white text-gray-600 text-sm font-semibold shadow hover:bg-gray-50 transition-transform hover:scale-105">Time & Days</button>
-            <button onclick="filterWords('numbers')" class="filter-btn px-4 py-2 rounded-full bg-white text-gray-600 text-sm font-semibold shadow hover:bg-gray-50 transition-transform hover:scale-105">Numbers</button>
-            <button onclick="filterWords('phrases')" class="filter-btn px-4 py-2 rounded-full bg-white text-gray-600 text-sm font-semibold shadow hover:bg-gray-50 transition-transform hover:scale-105">Phrases</button>
-        </div>
-
-        <!-- Stats -->
-        <div class="mb-4 text-gray-500 text-sm font-medium flex justify-between items-center">
-            <span id="resultCount">Showing all words</span>
-        </div>
-
-        <!-- Dictionary Grid -->
-        <div id="dictionaryGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Cards will be injected here via JS -->
-        </div>
-
-        <!-- Empty State (Hidden by default) -->
-        <div id="emptyState" class="hidden text-center py-20">
-            <div class="inline-block p-4 rounded-full bg-gray-200 mb-4">
-                <i class="fas fa-search text-3xl text-gray-400"></i>
+    <!-- Search & Filter Bar -->
+    <div class="bg-[#003366] py-6 shadow-md sticky top-0 z-30">
+        <div class="container mx-auto px-4 lg:px-8">
+            <div class="relative max-w-4xl mx-auto">
+                <input type="text" id="searchInput" placeholder="Search dictionary..." 
+                    class="w-full pl-5 pr-14 py-4 rounded-md shadow-lg text-lg text-gray-800 placeholder-gray-400 outline-none focus:ring-4 focus:ring-blue-400/30 transition-all font-serif">
+                <button class="absolute right-2 top-2 bottom-2 bg-[#002147] hover:bg-blue-900 text-white px-6 rounded transition-colors">
+                    <i class="fas fa-search"></i>
+                </button>
             </div>
-            <h3 class="text-xl font-semibold text-gray-700">No words found</h3>
-            <p class="text-gray-500">Try adjusting your search terms.</p>
+            
+            <!-- Horizontal Filters -->
+            <div class="flex flex-wrap justify-center gap-2 mt-4 text-sm max-w-4xl mx-auto" id="filter-container">
+                <button onclick="setFilter('all')" class="filter-chip active bg-blue-800/50 text-white px-3 py-1 rounded-full" id="btn-all">All</button>
+                <button onclick="setFilter('noun')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-3 py-1 rounded-full" id="btn-noun">Nouns</button>
+                <button onclick="setFilter('verb')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-3 py-1 rounded-full" id="btn-verb">Verbs</button>
+                <button onclick="setFilter('adjective')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-3 py-1 rounded-full" id="btn-adjective">Adjectives</button>
+                <button onclick="setFilter('pronoun')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-3 py-1 rounded-full" id="btn-pronoun">Pronouns</button>
+                <button onclick="setFilter('phrase')" class="filter-chip bg-white/10 text-blue-100 hover:text-white px-3 py-1 rounded-full" id="btn-phrase">Phrases</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow container mx-auto px-4 lg:px-8 py-8">
+        <div class="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto">
+            
+            <!-- Left Column: Dictionary Entries -->
+            <div class="flex-grow lg:w-2/3">
+                <div class="flex justify-between items-end border-b border-gray-200 pb-2 mb-4">
+                    <h2 class="text-xl font-serif font-bold text-[#002147]">Definitions</h2>
+                    <span class="text-sm text-gray-500"><span id="showing-count">0</span> entries found</span>
+                </div>
+
+                <div id="dictionary-list" class="flex flex-col">
+                    <!-- Entries injected here -->
+                </div>
+
+                <div id="no-results" class="hidden py-12 text-center">
+                    <p class="text-gray-400 text-lg serif-font italic">No exact matches found for your search.</p>
+                </div>
+            </div>
+
+            <!-- Right Column: Info / Context (Desktop) -->
+            <aside class="hidden lg:block w-80 shrink-0">
+                <div class="bg-[#f2f7fb] border border-blue-100 p-6 rounded-md shadow-sm sticky top-40">
+                    <h3 class="font-serif font-bold text-[#002147] mb-3 text-lg">Word of the Day</h3>
+                    <div class="mb-4">
+                        <span class="block font-serif text-2xl text-[#003366] font-bold">shughulo</span>
+                        <span class="text-sm text-gray-500 italic">noun</span>
+                        <p class="mt-2 text-gray-700">Conversation; friendly talk.</p>
+                    </div>
+                    <hr class="border-blue-200 my-4">
+                    <div class="text-sm text-gray-600">
+                        <p class="mb-2 font-bold text-[#002147]">Dialect Note</p>
+                        <p>This dictionary focuses on the Srinagar variant, which often exhibits vowel centralization (e.g., /a/ → /ʌ/) compared to Hunza forms.</p>
+                    </div>
+                </div>
+            </aside>
         </div>
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-auto">
-        <div class="max-w-6xl mx-auto px-4 py-6">
-            <div class="flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-                <p>&copy; 2024 Burushaski Language Resource</p>
-                <div class="mt-2 md:mt-0 flex space-x-4">
-                    <span>Language Isolate</span>
-                    <span>•</span>
-                    <span>Northern Pakistan</span>
-                </div>
-            </div>
+    <footer class="bg-gray-100 border-t border-gray-200 mt-auto py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-sm text-gray-500 font-serif">Burushaski-Kashmiri Dictionary Project &copy; 2024</p>
+            <p class="text-xs text-gray-400 mt-1">Based on research by Dr. Sadaf Munshi and community contributors.</p>
         </div>
     </footer>
 
+    <!-- Sources Modal -->
+    <div id="sourceModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col">
+            <div class="bg-[#002147] text-white p-4 flex justify-between items-center rounded-t">
+                <h3 class="font-serif font-bold text-lg">Source Acknowledgements</h3>
+                <button onclick="toggleSourceModal()" class="hover:text-gray-300"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto font-serif text-sm leading-relaxed text-gray-700">
+                <p class="mb-4">
+                    <strong>Scope:</strong> Exclusive to the Srinagar (Hari Parbat) diaspora dialect.
+                </p>
+                <ul class="list-disc pl-5 space-y-2 mb-6">
+                    <li>
+                        <strong>Mr. Raja Zeeshan:</strong> Primary informant (lexical validation & history).
+                    </li>
+                    <li>
+                        <strong>Mr. Raja Yawar:</strong> Sociolinguistic context & usage.
+                    </li>
+                    <li>
+                        <strong>Dr. Sadaf Munshi (UNT):</strong> Academic framework & documentation.
+                    </li>
+                </ul>
+                <div class="bg-gray-50 p-4 border border-gray-200 rounded">
+                    <strong class="block text-[#002147] mb-2">Resources</strong>
+                    <a href="https://drive.google.com/drive/folders/1FcROb0AtlbcZHVF5OB75fVRei1HHC_eD" target="_blank" class="text-blue-600 hover:underline block mb-1">
+                        <i class="fab fa-google-drive"></i> Access Data Repository
+                    </a>
+                    <a href="https://digital.library.unt.edu/explore/collections/BURUS/" target="_blank" class="text-blue-600 hover:underline block">
+                        <i class="fas fa-archive"></i> UNT Digital Archive
+                    </a>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-100 text-right">
+                <button onclick="toggleSourceModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded text-gray-800 font-medium transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Data and Logic -->
     <script>
-        // Data Source
         const dictionaryData = [
-            // Phrases
-            { burushaski: "Be hal bila?", english: "How are you?", category: "phrases", type: "Phrase" },
-            { burushaski: "Je shu waba", english: "I am fine", category: "phrases", type: "Phrase" },
-            { burushaski: "Juu", english: "Thanks", category: "phrases", type: "Phrase" },
-
-            // Common Nouns
-            { burushaski: "Hir", english: "Man", category: "common", type: "Noun" },
-            { burushaski: "Guśi", english: "Woman", category: "common", type: "Noun" },
-            { burushaski: "Dasén", english: "Girl", category: "common", type: "Noun" },
-            { burushaski: "Huk", english: "Dog", category: "common", type: "Noun" },
-            { burushaski: "Xhal", english: "Fox", category: "common", type: "Noun" },
-            { burushaski: "Yha / Hakíś", english: "House / Houses", category: "common", type: "Noun" },
-            { burushaski: "Aćel", english: "Water", category: "common", type: "Noun" },
-            { burushaski: "Arén", english: "My hand", category: "common", type: "Noun" },
-            { burushaski: "Askil", english: "My face", category: "common", type: "Noun" },
-
-            // Pronouns
-            { burushaski: "Ja / Je", english: "I", category: "pronouns", type: "Pronoun" },
-            { burushaski: "Un", english: "You (singular)", category: "pronouns", type: "Pronoun" },
-            { burushaski: "In", english: "He / She / It", category: "pronouns", type: "Pronoun" },
-            { burushaski: "Mi", english: "We", category: "pronouns", type: "Pronoun" },
-            { burushaski: "Ma", english: "You (plural)", category: "pronouns", type: "Pronoun" },
-
-            // Time & Days
-            { burushaski: "Akhoinģ", english: "Today", category: "time", type: "Time" },
-            { burushaski: "Satik", english: "Yesterday", category: "time", type: "Time" },
-            { burushaski: "Jimalay / Jimel", english: "Tomorrow", category: "time", type: "Time" },
-            { burushaski: "A-dit", english: "Sunday", category: "time", type: "Day" },
-            { burushaski: "Chandurar", english: "Monday", category: "time", type: "Day" },
-            { burushaski: "Angaro", english: "Tuesday", category: "time", type: "Day" },
-            { burushaski: "Bodho", english: "Wednesday", category: "time", type: "Day" },
-            { burushaski: "Berayspat", english: "Thursday", category: "time", type: "Day" },
-            { burushaski: "Shukuro", english: "Friday", category: "time", type: "Day" },
-            { burushaski: "Shumshayr", english: "Saturday", category: "time", type: "Day" },
-
-            // Numbers
-            { burushaski: "Hik", english: "One (1)", category: "numbers", type: "Number" },
-            { burushaski: "Altó", english: "Two (2)", category: "numbers", type: "Number" },
-            { burushaski: "Iskí", english: "Three (3)", category: "numbers", type: "Number" },
-            { burushaski: "Wálti", english: "Four (4)", category: "numbers", type: "Number" },
-            { burushaski: "Číndi", english: "Five (5)", category: "numbers", type: "Number" },
-            { burushaski: "Mishíndi", english: "Six (6)", category: "numbers", type: "Number" },
-            { burushaski: "Thalé", english: "Seven (7)", category: "numbers", type: "Number" },
-            { burushaski: "Altámbi", english: "Eight (8)", category: "numbers", type: "Number" },
-            { burushaski: "Huntí", english: "Nine (9)", category: "numbers", type: "Number" },
-            { burushaski: "Tóorimi", english: "Ten (10)", category: "numbers", type: "Number" },
-            { burushaski: "Turma-hik", english: "Eleven (11)", category: "numbers", type: "Number" },
-            { burushaski: "Turma-alto", english: "Twelve (12)", category: "numbers", type: "Number" },
-            { burushaski: "Turma-iski", english: "Thirteen (13)", category: "numbers", type: "Number" },
-            { burushaski: "Turma-wálti", english: "Fourteen (14)", category: "numbers", type: "Number" },
-            { burushaski: "Turma-číndi", english: "Fifteen (15)", category: "numbers", type: "Number" },
-            { burushaski: "Turma-mishíndi", english: "Sixteen (16)", category: "numbers", type: "Number" },
-            { burushaski: "Turma-thale", english: "Seventeen (17)", category: "numbers", type: "Number" },
-            { burushaski: "Turma-altámbi", english: "Eighteen (18)", category: "numbers", type: "Number" },
-            { burushaski: "Turma-hunti", english: "Nineteen (19)", category: "numbers", type: "Number" },
-            { burushaski: "Altar", english: "Twenty (20)", category: "numbers", type: "Number" },
+            { id: 1, burushaski: "a", bur_perso: "آ", bur_ipa: "/a/", bur_std: "a-", kashmiri: "مےٚ", kash_ipa: "/me/", english: "My / Mine", pos: "pronoun (prefix)", example: "A-baba Hari Parbat-ulo hurusho bo.", example_en: "My father lives in Hari Parbat." },
+            { id: 2, burushaski: "ba", bur_perso: "با", bur_ipa: "/bɑ/", bur_std: "ba", kashmiri: "چھُس", kash_ipa: "/t͡ʃʰus/", english: "I am (masculine)", pos: "verb (auxiliary)", example: "Je Srinagar-ulo ba.", example_en: "I am in Srinagar." },
+            { id: 3, burushaski: "bo", bur_perso: "بو", bur_ipa: "/bo/", bur_std: "bo", kashmiri: "چھَس", kash_ipa: "/t͡ʃʰas/", english: "I am (feminine)", pos: "verb (auxiliary)", example: "Je doktorya bo.", example_en: "I am a doctor (female)." },
+            { id: 4, burushaski: "chap", bur_perso: "چھاپ", bur_ipa: "/t͡ʃʌp/", bur_std: "chap", kashmiri: "ماز", kash_ipa: "/maːz/", english: "Meat", pos: "noun", example: "Ine chap shibei.", example_en: "He is eating meat." },
+            { id: 5, burushaski: "chil", bur_perso: "چھِل", bur_ipa: "/t͡ʃil/", bur_std: "chil", kashmiri: "پٲنۍ", kash_ipa: "/pəːɲ/", english: "Water", pos: "noun", example: "Chil mi.", example_en: "Drink water." },
+            { id: 6, burushaski: "dasin", bur_perso: "دَسین", bur_ipa: "/dʌsin/", bur_std: "dasin", kashmiri: "کوٗر", kash_ipa: "/kuːr/", english: "Girl / Unmarried woman", pos: "noun", example: "Dasin gane gatung gitsam.", example_en: "I bought clothes for the girl." },
+            { id: 7, burushaski: "hir", bur_perso: "ہِر", bur_ipa: "/hir/", bur_std: "hir", kashmiri: "مَرد", kash_ipa: "/mard/", english: "Man", pos: "noun", example: "Hir bazaare guccham.", example_en: "The man went to the market." },
+            { id: 8, burushaski: "gus", bur_perso: "گُس", bur_ipa: "/gus/", bur_std: "gus", kashmiri: "زَنان", kash_ipa: "/zanaːn/", english: "Woman", pos: "noun", example: "Guse haralt eitsubo.", example_en: "The woman sees the rain." },
+            { id: 9, burushaski: "je", bur_perso: "جے", bur_ipa: "/d͡ʒe/", bur_std: "je", kashmiri: "بٔ", kash_ipa: "/bɨ/", english: "I", pos: "pronoun", example: "Je Burusho ba.", example_en: "I am a Burusho." },
+            { id: 10, burushaski: "un", bur_perso: "اُن", bur_ipa: "/un/", bur_std: "un", kashmiri: "ژٕ", kash_ipa: "/t͡sɨ/", english: "You (singular)", pos: "pronoun", example: "Un ka be?", example_en: "Who are you?" },
+            { id: 11, burushaski: "mi", bur_perso: "می", bur_ipa: "/mi/", bur_std: "mi", kashmiri: "أسۍ", kash_ipa: "/əsʲ/", english: "We", pos: "pronoun", example: "Mi kashmiri maan ba.", example_en: "We are Kashmiri people." },
+            { id: 12, burushaski: "ma", bur_perso: "ما", bur_ipa: "/ma/", bur_std: "ma", kashmiri: "تُہۍ", kash_ipa: "/tuhʲ/", english: "You (plural)", pos: "pronoun", example: "Ma amin baa?", example_en: "Who are you (all)?" },
+            { id: 13, burushaski: "khu", bur_perso: "کھو", bur_ipa: "/kʰu/", bur_std: "khu", kashmiri: "یِم", kash_ipa: "/jim/", english: "These (proximal)", pos: "pronoun", example: "Khu gucchar chaman.", example_en: "These people are walking." },
+            { id: 14, burushaski: "ine", bur_perso: "اِنے", bur_ipa: "/ine/", bur_std: "ine", kashmiri: "سُہ / سۄ", kash_ipa: "/su (m) / sɔ (f)/", english: "He / She (distal)", pos: "pronoun", example: "Ine kitab poraibai.", example_en: "He is reading a book." },
+            { id: 15, burushaski: "sen", bur_perso: "سین", bur_ipa: "/sen/", bur_std: "sen-", kashmiri: "وَنُن", kash_ipa: "/wanun/", english: "To say / tell", pos: "verb", example: "Mo sen!", example_en: "Don't say it!" },
+            { id: 16, burushaski: "shapik", bur_perso: "شپِک", bur_ipa: "/ʃʌpik/", bur_std: "shapik", kashmiri: "ژوoٹ", kash_ipa: "/t͡soːt/", english: "Bread / Food", pos: "noun", example: "Shapik shi.", example_en: "Eat the bread." },
+            { id: 17, burushaski: "gupas", bur_perso: "گُپَس", bur_ipa: "/gupʌs/", bur_std: "gupas", kashmiri: "پَمبٕ", kash_ipa: "/pambɨ/", english: "Cotton", pos: "noun", example: "Gupas safed bila.", example_en: "The cotton is white." },
+            { id: 18, burushaski: "hiles", bur_perso: "ہِلیس", bur_ipa: "/hiles/", bur_std: "hiles", kashmiri: "نێچُہ", kash_ipa: "/net͡ʃuh/", english: "Boy", pos: "noun", example: "Hiles skul-ulo nibai.", example_en: "The boy is going to school." },
+            { id: 19, burushaski: "mama", bur_perso: "ماما", bur_ipa: "/mʌmʌ/", bur_std: "mama", kashmiri: "موج", kash_ipa: "/moːd͡ʒ/", english: "Mother", pos: "noun", example: "A-mama shiri bo.", example_en: "My mother is good/kind." },
+            { id: 20, burushaski: "baba", bur_perso: "بابا", bur_ipa: "/bʌbʌ/", bur_std: "baba", kashmiri: "مول", kash_ipa: "/moːl/", english: "Father", pos: "noun", example: "A-baba kami euci.", example_en: "My father does work." },
+            { id: 21, burushaski: "altan", bur_perso: "اَلتَن", bur_ipa: "/ʌltʌn/", bur_std: "altan", kashmiri: "زٕ", kash_ipa: "/zɨ/", english: "Two", pos: "numeral", example: "Altan hiri du.", example_en: "There are two men." },
+            { id: 22, burushaski: "han", bur_perso: "ہَن", bur_ipa: "/hʌn/", bur_std: "han", kashmiri: "اَکھ", kash_ipa: "/akʰ/", english: "One", pos: "numeral", example: "Han tsen.", example_en: "One bird." },
+            { id: 23, burushaski: "guro", bur_perso: "گُرو", bur_ipa: "/guro/", bur_std: "guro", kashmiri: "گَرٕم", kash_ipa: "/garɨm/", english: "Hot", pos: "adjective", example: "Chil guro bila.", example_en: "The water is hot." },
+            { id: 24, burushaski: "yurq", bur_perso: "یُرق", bur_ipa: "/jurq/", bur_std: "yurq", kashmiri: "یَکھ", kash_ipa: "/jakʰ/", english: "Cold", pos: "adjective", example: "Yurq neibila.", example_en: "It is not cold." },
+            { id: 25, burushaski: "bal", bur_perso: "بَل", bur_ipa: "/bʌl/", bur_std: "bal", kashmiri: "دیوار", kash_ipa: "/diːwaːr/", english: "Wall", pos: "noun", example: "Bal-ulo.", example_en: "On the wall." },
+            { id: 26, burushaski: "tom", bur_perso: "ٹوم", bur_ipa: "/tom/", bur_std: "tom", kashmiri: "کُل", kash_ipa: "/kul/", english: "Tree", pos: "noun", example: "Tom eikhan.", example_en: "The tree is tall." },
+            { id: 27, burushaski: "phu", bur_perso: "پھو", bur_ipa: "/pʰu/", bur_std: "phu", kashmiri: "نار", kash_ipa: "/naːr/", english: "Fire", pos: "noun", example: "Phu phetu.", example_en: "Light the fire." },
+            { id: 28, burushaski: "safed", bur_perso: "سفید", bur_ipa: "/sʌfed/", bur_std: "safed", kashmiri: "سَفیٖد", kash_ipa: "/safed/", english: "White", pos: "adjective", example: "Gatung safed bila.", example_en: "The clothes are white. (Note: Kashmiri loan commonly used)" },
+            { id: 29, burushaski: "shuq", bur_perso: "شُق", bur_ipa: "/ʃuq/", bur_std: "shuq", kashmiri: "وُزُل", kash_ipa: "/wuzul/", english: "Red", pos: "adjective", example: "Shuq phu.", example_en: "Red fire." },
+            { id: 30, burushaski: "shon", bur_perso: "شون", bur_ipa: "/ʃon/", bur_std: "shon", kashmiri: "اَنہٕ گوٹ", kash_ipa: "/anɨ goːt/", english: "Blind", pos: "adjective", example: "Ine hir shon bam.", example_en: "That man was blind." },
+            { id: 31, burushaski: "e", bur_perso: "اے", bur_ipa: "/e/", bur_std: "e", kashmiri: "آ", kash_ipa: "/aː/", english: "Yes / Q-Marker", pos: "particle", example: "Un guca bai e?", example_en: "Are you walking?" },
+            { id: 32, burushaski: "be", bur_perso: "بے", bur_ipa: "/be/", bur_std: "be", kashmiri: "نہ", kash_ipa: "/na/", english: "No", pos: "particle", example: "Be, je ni neyba.", example_en: "No, I am not going." },
+            { id: 33, burushaski: "ni", bur_perso: "نی", bur_ipa: "/ni/", bur_std: "ni-", kashmiri: "گَژھُن", kash_ipa: "/gat͡sʰun/", english: "To go", pos: "verb", example: "Je bazaarer nibaa.", example_en: "I am going to the market." },
+            { id: 34, burushaski: "ju", bur_perso: "جو", bur_ipa: "/d͡ʒu/", bur_std: "ju-", kashmiri: "یُن", kash_ipa: "/jun/", english: "To come", pos: "verb", example: "Khole ju!", example_en: "Come here!" },
+            { id: 35, burushaski: "hurus", bur_perso: "ہُرس", bur_ipa: "/hurus/", bur_std: "hurus-", kashmiri: "بِہُن", kash_ipa: "/bihun/", english: "To sit / dwell", pos: "verb", example: "Kursi-ulo hurus.", example_en: "Sit on the chair." },
+            { id: 36, burushaski: "shi", bur_perso: "شی", bur_ipa: "/ʃi/", bur_std: "shi-", kashmiri: "کھیوٚن", kash_ipa: "/kʰjon/", english: "To eat", pos: "verb", example: "Bate shi.", example_en: "Eat the rice." },
+            { id: 37, burushaski: "bate", bur_perso: "بتے", bur_ipa: "/bʌte/", bur_std: "bate", kashmiri: "بَتہٕ", kash_ipa: "/batɨ/", english: "Cooked Rice", pos: "noun", example: "Bate shirin bila.", example_en: "The rice is tasty." },
+            { id: 38, burushaski: "min", bur_perso: "مِن", bur_ipa: "/min/", bur_std: "min-", kashmiri: "چوٚن", kash_ipa: "/t͡ʃon/", english: "To drink", pos: "verb", example: "Chil mina.", example_en: "Drink water." },
+            { id: 39, burushaski: "waal", bur_perso: "وال", bur_ipa: "/waːl/", bur_std: "waal-", kashmiri: "وُٹھُن", kash_ipa: "/wutʰun/", english: "To fly", pos: "verb", example: "Tsen waalibi.", example_en: "The bird flies." },
+            { id: 40, burushaski: "haralt", bur_perso: "ہَرلت", bur_ipa: "/hʌrʌlt/", bur_std: "haralt", kashmiri: "روٗد", kash_ipa: "/ruːd/", english: "Rain", pos: "noun", example: "Haralt shuqulo.", example_en: "Rain is falling." },
+            { id: 41, burushaski: "huru", bur_perso: "ہُرو", bur_ipa: "/huru/", bur_std: "huru", kashmiri: "مَرد", kash_ipa: "/mard/", english: "Men (Plural)", pos: "noun", example: "Huru jam maan.", example_en: "The men gathered." },
+            { id: 42, burushaski: "gushingants", bur_perso: "گُشنگَنٹس", bur_ipa: "/guʃingʌnt͡s/", bur_std: "gushingants", kashmiri: "زَنانہٕ", kash_ipa: "/zanaːnɨ/", english: "Women (Plural)", pos: "noun", example: "Gushingants giratas.", example_en: "The women are dancing." },
+            { id: 43, burushaski: "chaman", bur_perso: "چمَن", bur_ipa: "/t͡ʃʌmʌn/", bur_std: "chaman", kashmiri: "پَکان", kash_ipa: "/pakaːn/", english: "Walking", pos: "verb (participle)", example: "Ine chaman bai.", example_en: "He is walking." },
+            { id: 44, burushaski: "khan", bur_perso: "کھَن", bur_ipa: "/kʰʌn/", bur_std: "khan", kashmiri: "قَلعہٕ", kash_ipa: "/qala/", english: "Fort", pos: "noun", example: "Hari Parbat khan.", example_en: "The Hari Parbat fort." },
+            { id: 45, burushaski: "shughulo", bur_perso: "شُغُلو", bur_ipa: "/ʃuɣulo/", bur_std: "shughulo", kashmiri: "کَٹھ", kash_ipa: "/katʰ/", english: "Talk / Conversation", pos: "noun", example: "Mi shughulo etchan.", example_en: "We are talking." },
+            { id: 46, burushaski: "eskul", bur_perso: "اسکول", bur_ipa: "/eskul/", bur_std: "eskul", kashmiri: "سکوٗل", kash_ipa: "/skuːl/", english: "School", pos: "noun", example: "Eskul dur bila.", example_en: "The school is far. (Loanword established in dialect)" },
+            { id: 47, burushaski: "ha", bur_perso: "ہا", bur_ipa: "/hʌ/", bur_std: "ha", kashmiri: "گَرٕ", kash_ipa: "/garɨ/", english: "House", pos: "noun", example: "A-ha Hari Parbat-ulo bila.", example_en: "My house is in Hari Parbat." },
+            { id: 48, burushaski: "yater", bur_perso: "یَتِر", bur_ipa: "/jʌter/", bur_std: "yater", kashmiri: "مَشہٕ ہِنٛد", kash_ipa: "/maʃɨhind/", english: "Up / Above", pos: "adverb", example: "Yater ni.", example_en: "Go up." },
+            { id: 49, burushaski: "mar", bur_perso: "مَر", bur_ipa: "/mʌr/", bur_std: "mar", kashmiri: "گِیو", kash_ipa: "/gʲaw/", english: "Butter / Ghee", pos: "noun", example: "Mar shi.", example_en: "Eat butter." },
+            { id: 50, burushaski: "phat", bur_perso: "پھَٹ", bur_ipa: "/pʰʌt/", bur_std: "phat", kashmiri: "تراوُن", kash_ipa: "/traːwun/", english: "Leave / Abandon (verb root)", pos: "verb", example: "Phat eti.", example_en: "Leave it." },
+            { id: 51, burushaski: "be hal be", bur_perso: "بے حال بے", bur_ipa: "/be hɑl be/", bur_std: "be hal be", kashmiri: "کیا حال چھُ", kash_ipa: "/kja haːl t͡ʃʰu/", english: "How are you?", pos: "phrase", example: "Le braya, be hal be?", example_en: "O brother, how are you?" },
+            { id: 52, burushaski: "aw", bur_perso: "آؤ", bur_ipa: "/au/", bur_std: "au", kashmiri: "مول", kash_ipa: "/moːl/", english: "Father", pos: "noun", example: "A-aw juwai.", example_en: "My father is coming." },
+            { id: 53, burushaski: "atro", bur_perso: "اَترو", bur_ipa: "/atro/", bur_std: "a-cho", kashmiri: "بوی", kash_ipa: "/boj/", english: "Brother", pos: "noun", example: "Atro skulo nibai.", example_en: "Brother is going to school." },
+            { id: 54, burushaski: "yatis", bur_perso: "یَتِس", bur_ipa: "/jʌtis/", bur_std: "yatis", kashmiri: "کَلٕ", kash_ipa: "/kalɨ/", english: "Head", pos: "noun", example: "A-yatis ganibi.", example_en: "My head hurts." },
+            { id: 55, burushaski: "elching", bur_perso: "ایلچِنگ", bur_ipa: "/elt͡ʃing/", bur_std: "elching", kashmiri: "اَچھ", kash_ipa: "/at͡ʃʰ/", english: "Eye(s)", pos: "noun", example: "Elching yuwash.", example_en: "Open (your) eyes." },
+            { id: 56, burushaski: "impus", bur_perso: "اِمپُس", bur_ipa: "/impus/", bur_std: "gumpus", kashmiri: "نَس", kash_ipa: "/nas/", english: "Nose", pos: "noun", example: "Impus yurk bi.", example_en: "The nose is cold." },
+            { id: 57, burushaski: "ekhat", bur_perso: "ایکھَت", bur_ipa: "/ekʰʌt/", bur_std: "khat", kashmiri: "اَس", kash_ipa: "/as/", english: "Mouth", pos: "noun", example: "Ekhat eti.", example_en: "Open mouth (idiomatic)." },
+            { id: 58, burushaski: "ema", bur_perso: "ایما", bur_ipa: "/emʌ/", bur_std: "eme", kashmiri: "دَند", kash_ipa: "/dand/", english: "Tooth", pos: "noun", example: "Ema qaudiman.", example_en: "The tooth fell out." },
+            { id: 59, burushaski: "yutin", bur_perso: "یُٹِن", bur_ipa: "/jutin/", bur_std: "yutin", kashmiri: "کھوٗر", kash_ipa: "/kʰuːr/", english: "Foot", pos: "noun", example: "Yutin gurut.", example_en: "Wash feet." },
+            { id: 60, burushaski: "ghuying", bur_perso: "غویِنگ", bur_ipa: "/ɣujing/", bur_std: "ghuying", kashmiri: "مَس", kash_ipa: "/mas/", english: "Hair", pos: "noun", example: "Ghuying eikhan bila.", example_en: "The hair is long." },
+            { id: 61, burushaski: "gay", bur_perso: "گے", bur_ipa: "/gai/", bur_std: "gay", kashmiri: "شیٖن", kash_ipa: "/ʃiːn/", english: "Snow", pos: "noun", example: "Gay shuqulo.", example_en: "Snow is falling." },
+            { id: 62, burushaski: "karalo", bur_perso: "کَرلو", bur_ipa: "/kʌrʌlo/", bur_std: "karalo", kashmiri: "کَٹھ", kash_ipa: "/kaʈʰ/", english: "Sheep", pos: "noun", example: "Karalo gucaibi.", example_en: "The sheep is walking." },
+            { id: 63, burushaski: "bua", bur_perso: "بُوا", bur_ipa: "/buɑ/", bur_std: "bua", kashmiri: "گاو", kash_ipa: "/gaːv/", english: "Cow", pos: "noun", example: "Bua chil minibo.", example_en: "The cow is drinking water." },
+            { id: 64, burushaski: "bush", bur_perso: "بُش", bur_ipa: "/buʃ/", bur_std: "bush", kashmiri: "برٛوoر", kash_ipa: "/broːr/", english: "Cat", pos: "noun", example: "Bush miau etchibi.", example_en: "The cat says meow." },
+            { id: 65, burushaski: "ghaan", bur_perso: "غان", bur_ipa: "/ɣɑːn/", bur_std: "qa!", kashmiri: "کاو", kash_ipa: "/kaːv/", english: "Crow", pos: "noun", example: "Ghaan waalibi.", example_en: "The crow flies." },
+            { id: 66, burushaski: "tal", bur_perso: "ٹَل", bur_ipa: "/tʌl/", bur_std: "tal", kashmiri: "کوoتُر", kash_ipa: "/koːtur/", english: "Pigeon", pos: "noun", example: "Tal shapik shibei.", example_en: "The pigeon eats food." },
+            { id: 67, burushaski: "chagal", bur_perso: "چھَگَل", bur_ipa: "/t͡ʃʌgʌl/", bur_std: "chagal", kashmiri: "لوoہ", kash_ipa: "/loːh/", english: "Fox", pos: "noun", example: "Chagal turu etchibi.", example_en: "The fox looks." },
+            { id: 68, burushaski: "balt", bur_perso: "بَلٹ", bur_ipa: "/bʌlt/", bur_std: "balt", kashmiri: "ژوِّنٛٹ", kash_ipa: "/t͡suːnʈ/", english: "Apple", pos: "noun", example: "Balt shirin bila.", example_en: "The apple is sweet." },
+            { id: 69, burushaski: "khakayo", bur_perso: "کھَکَیو", bur_ipa: "/kʰʌkʌjo/", bur_std: "khakayo", kashmiri: "ڈوٗن", kash_ipa: "/duːn/", english: "Walnut", pos: "noun", example: "Khakayo thag eti.", example_en: "Break the walnut." },
+            { id: 70, burushaski: "hakichang", bur_perso: "ہَکیچنگ", bur_ipa: "/hʌkit͡ʃʌng/", bur_std: "hakichang", kashmiri: "مکانٕ", kash_ipa: "/makaːnɨ/", english: "Houses", pos: "noun (plural)", example: "Hakichang dur du.", example_en: "The houses are far." },
+            { id: 71, burushaski: "um", bur_perso: "اُم", bur_ipa: "/um/", bur_std: "un", kashmiri: "ژٕ", kash_ipa: "/t͡sɨ/", english: "You", pos: "pronoun", example: "Um be hal be?", example_en: "How are you?" },
+            { id: 72, burushaski: "saboor", bur_perso: "صبور", bur_ipa: "/sʌbuːr/", bur_std: "saboor", kashmiri: "راٹھ", kash_ipa: "/raːʈʰ/", english: "Yesterday", pos: "adverb", example: "Je saboor khole bam.", example_en: "I was here yesterday." }
         ];
 
-        const grid = document.getElementById('dictionaryGrid');
+        // DOM Elements
+        const list = document.getElementById('dictionary-list');
         const searchInput = document.getElementById('searchInput');
-        const emptyState = document.getElementById('emptyState');
-        const resultCount = document.getElementById('resultCount');
+        const showingCount = document.getElementById('showing-count');
+        const noResults = document.getElementById('no-results');
+        
         let currentFilter = 'all';
 
-        // Initial Render
-        renderCards(dictionaryData);
+        function renderEntries(entries) {
+            list.innerHTML = '';
+            showingCount.textContent = entries.length;
 
-        // Filter Function
-        function filterWords(category) {
-            currentFilter = category;
-            
-            // Update Buttons UI
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                if(category === 'all' && btn.innerText === 'All') {
-                     btn.classList.add('bg-indigo-600', 'text-white');
-                     btn.classList.remove('bg-white', 'text-gray-600');
-                } else if (btn.getAttribute('onclick').includes(category) && category !== 'all') {
-                     btn.classList.add('bg-indigo-600', 'text-white');
-                     btn.classList.remove('bg-white', 'text-gray-600');
-                } else {
-                    btn.classList.remove('bg-indigo-600', 'text-white');
-                    btn.classList.add('bg-white', 'text-gray-600');
-                }
-            });
-
-            applyFilters();
-        }
-
-        // Search Listener
-        searchInput.addEventListener('input', () => {
-            applyFilters();
-        });
-
-        // Core Logic to Apply Search & Category
-        function applyFilters() {
-            const searchTerm = searchInput.value.toLowerCase();
-            
-            const filtered = dictionaryData.filter(item => {
-                const matchesCategory = currentFilter === 'all' || item.category === currentFilter;
-                const matchesSearch = item.burushaski.toLowerCase().includes(searchTerm) || 
-                                      item.english.toLowerCase().includes(searchTerm);
-                return matchesCategory && matchesSearch;
-            });
-
-            renderCards(filtered);
-        }
-
-        // Render Function
-        function renderCards(data) {
-            grid.innerHTML = '';
-            
-            if (data.length === 0) {
-                emptyState.classList.remove('hidden');
-                resultCount.innerText = `No results found`;
-                return;
+            if (entries.length === 0) {
+                noResults.classList.remove('hidden');
             } else {
-                emptyState.classList.add('hidden');
-                resultCount.innerText = `Showing ${data.length} word${data.length !== 1 ? 's' : ''}`;
+                noResults.classList.add('hidden');
             }
 
-            data.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition duration-300 transform hover:-translate-y-1 group cursor-pointer';
-                card.onclick = () => copyToClipboard(item.burushaski);
+            entries.forEach(entry => {
+                const item = document.createElement('div');
+                item.className = 'dict-entry group';
                 
-                // Color coding tags based on category
-                let tagColor = "bg-gray-100 text-gray-600";
-                if(item.category === 'numbers') tagColor = "bg-blue-100 text-blue-600";
-                if(item.category === 'time') tagColor = "bg-green-100 text-green-600";
-                if(item.category === 'phrases') tagColor = "bg-purple-100 text-purple-600";
-                if(item.category === 'pronouns') tagColor = "bg-orange-100 text-orange-600";
-
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-xs font-bold px-2 py-1 rounded uppercase tracking-wide ${tagColor}">
-                            ${item.type}
-                        </span>
-                        <i class="far fa-copy text-gray-300 group-hover:text-indigo-500 transition"></i>
+                // Format POS abbreviation style (e.g., "noun" -> "n.")
+                let posShort = entry.pos.split(' ')[0].substring(0,1) + '.';
+                if(entry.pos.includes('adverb')) posShort = 'adv.';
+                if(entry.pos.includes('adjective')) posShort = 'adj.';
+                if(entry.pos.includes('pronoun')) posShort = 'pron.';
+                if(entry.pos.includes('verb')) posShort = 'v.';
+                
+                item.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-baseline gap-2 mb-2">
+                        <h3 class="text-2xl font-bold headword cursor-pointer hover:text-[#003366] transition-colors" onclick="speakEntry(${entry.id})">
+                            ${entry.burushaski}
+                        </h3>
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="ipa">/${entry.bur_ipa.replace(/\//g, '')}/</span>
+                            <button onclick="speakEntry(${entry.id})" class="text-blue-700 hover:text-blue-900 transition-colors" title="Listen">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <span class="pos-tag ml-1">${entry.pos}</span>
+                        </div>
                     </div>
-                    <h2 class="text-2xl font-bold text-gray-800 mb-1 burushaski-font">${item.burushaski}</h2>
-                    <p class="text-lg text-gray-500 font-medium">${item.english}</p>
+                    
+                    <div class="mb-2">
+                        <span class="ur-text text-xl text-gray-600 mr-2" dir="rtl">${entry.bur_perso}</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="text-gray-900 font-serif leading-relaxed">
+                            <span class="font-bold text-gray-700">1.</span> ${entry.english}
+                        </p>
+                    </div>
+
+                    <div class="pl-4 border-l-2 border-gray-100 mb-3">
+                        <p class="text-gray-600 italic font-serif text-sm">"${entry.example}"</p>
+                        <p class="text-gray-500 text-sm mt-0.5">— ${entry.example_en}</p>
+                    </div>
+
+                    <div class="flex items-center gap-2 mt-3 pt-2 border-t border-dotted border-gray-200">
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Kashmiri:</span>
+                        <span class="ur-text text-lg text-[#003366]" dir="rtl">${entry.kashmiri}</span>
+                        <span class="text-xs text-gray-400 font-mono">[${entry.kash_ipa}]</span>
+                        <div class="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="copyEntry(${entry.id})" class="text-gray-400 hover:text-[#002147] text-xs uppercase font-bold tracking-wider">
+                                Copy Citation
+                            </button>
+                        </div>
+                    </div>
                 `;
-                grid.appendChild(card);
+                list.appendChild(item);
             });
         }
 
-        // Copy Feature
-        function copyToClipboard(text) {
-            const tempInput = document.createElement("textarea");
-            tempInput.value = text;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand("copy");
-            document.body.removeChild(tempInput);
-
-            // Simple toast notification logic
-            const toast = document.createElement('div');
-            toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded shadow-lg z-50 text-sm animate-bounce';
-            toast.innerText = `Copied "${text}"`;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2000);
+        // Filtering Logic
+        function setFilter(pos) {
+            currentFilter = pos;
+            document.querySelectorAll('.filter-chip').forEach(el => {
+                el.classList.remove('active', 'bg-blue-800/50', 'text-white');
+                el.classList.add('bg-white/10', 'text-blue-100');
+                if(el.id === `btn-${pos}`) {
+                    el.classList.remove('bg-white/10', 'text-blue-100');
+                    el.classList.add('active', 'bg-blue-800/50', 'text-white');
+                }
+            });
+            filterEntries();
         }
+
+        function filterEntries() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filtered = dictionaryData.filter(entry => {
+                const matchesSearch = 
+                    entry.burushaski.toLowerCase().includes(searchTerm) ||
+                    entry.english.toLowerCase().includes(searchTerm) ||
+                    entry.bur_ipa.toLowerCase().includes(searchTerm) ||
+                    entry.kashmiri.includes(searchTerm);
+                const matchesPos = currentFilter === 'all' || entry.pos.toLowerCase().includes(currentFilter);
+                return matchesSearch && matchesPos;
+            });
+            renderEntries(filtered);
+        }
+
+        // --- Audio & Utilities (Same robust logic as before) ---
+        let availableVoices = [];
+        function loadVoices() { availableVoices = window.speechSynthesis.getVoices(); }
+        loadVoices();
+        if (window.speechSynthesis.onvoiceschanged !== undefined) window.speechSynthesis.onvoiceschanged = loadVoices;
+
+        function speakEntry(id) {
+            const entry = dictionaryData.find(e => e.id === id);
+            if (!entry) return;
+            const audioPath = `audio/${id}.mp3`;
+            const audio = new Audio(audioPath);
+            audio.addEventListener('error', () => speakTextFallback(entry.bur_perso));
+            audio.play().catch(() => speakTextFallback(entry.bur_perso));
+        }
+
+        function speakTextFallback(text) {
+            if (!text || !window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            if (availableVoices.length === 0) loadVoices();
+            const preferredVoice = availableVoices.find(v => v.lang.includes('ur') || v.lang.includes('hi'));
+            if (preferredVoice) utterance.voice = preferredVoice;
+            utterance.rate = 0.8;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function copyEntry(id) {
+            const entry = dictionaryData.find(e => e.id === id);
+            if (!entry) return;
+            const text = `${entry.burushaski} (${entry.pos})
+Definition: ${entry.english}
+Kashmiri: ${entry.kashmiri}`;
+            
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert("Citation copied.");
+            } catch (err) { console.error(err); }
+            document.body.removeChild(textArea);
+        }
+
+        function toggleSourceModal() {
+            const modal = document.getElementById('sourceModal');
+            modal.classList.toggle('hidden');
+        }
+
+        searchInput.addEventListener('input', filterEntries);
+        renderEntries(dictionaryData);
     </script>
 </body>
 </html>
