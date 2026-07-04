@@ -4,15 +4,15 @@ import numpy as np
 from moviepy.editor import AudioFileClip
 
 def analyze():
-    audio_dir = r"c:\Users\aazim\Downloads\dictionary\burushaski-dictionary\Burushaskhi_dictionary_dataset\mp3_audio"
-    out_path = r"c:\Users\aazim\Downloads\dictionary\burushaski-dictionary\analysis_output.txt"
+    audio_dir = r"c:\Users\aazim\Downloads\dictionary\burushaski-dictionary\burushaski_dictionary_dataset_part2\mp3_audio"
+    out_path = r"c:\Users\aazim\Downloads\dictionary\burushaski-dictionary\analysis_output_part2.txt"
     if not os.path.exists(audio_dir):
         print("Audio directory not found!")
         return
 
     files = sorted([f for f in os.listdir(audio_dir) if f.endswith(".mp3")])
     
-    print("Analyzing sound segments in all 37 files...\n")
+    print("Analyzing sound segments in all part 2 files...\n")
     out_f = open(out_path, "w", encoding="utf-8")
     
     for filename in files:
